@@ -32,6 +32,16 @@
         const { useState, useEffect } = React;
         const { initializeApp, getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } = window.firebaseModules;
 
+        // Configuración de Firebase (automática)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOG8EroOz3pn9o1fLYxbtTTV2laFBqd2s",
+            authDomain: "cbc-manises.firebaseapp.com",
+            projectId: "cbc-manises",
+            storageBucket: "cbc-manises.firebasestorage.app",
+            messagingSenderId: "756895829915",
+            appId: "1:756895829915:web:b70f5930703f183bf65b3e"
+        };
+
         // Iconos SVG
         const Calendar = ({ className }) => (
             <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,13 +49,6 @@
                 <line x1="16" y1="2" x2="16" y2="6"></line>
                 <line x1="8" y1="2" x2="8" y2="6"></line>
                 <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-        );
-
-        const Video = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
             </svg>
         );
 
@@ -104,7 +107,6 @@
             const [showAdminPanel, setShowAdminPanel] = useState(false);
             const [editingPartido, setEditingPartido] = useState(null);
             const [db, setDb] = useState(null);
-            const [showConfigPanel, setShowConfigPanel] = useState(true);
             const [formData, setFormData] = useState({
                 fecha: '',
                 hora: '',
@@ -121,27 +123,18 @@
                 esPretemporada: false
             });
 
-            const setupFirebase = (config) => {
+            // Inicializar Firebase automáticamente
+            useEffect(() => {
                 try {
-                    const app = initializeApp(config);
+                    const app = initializeApp(firebaseConfig);
                     const firestore = getFirestore(app);
                     setDb(firestore);
-                    setShowConfigPanel(false);
-                    localStorage.setItem('firebaseConfig', JSON.stringify(config));
-                    return true;
                 } catch (error) {
-                    alert('Error al configurar Firebase: ' + error.message);
-                    return false;
-                }
-            };
-
-            useEffect(() => {
-                const savedConfig = localStorage.getItem('firebaseConfig');
-                if (savedConfig) {
-                    setupFirebase(JSON.parse(savedConfig));
+                    console.error('Error conectando con Firebase:', error);
                 }
             }, []);
 
+            // Escuchar cambios en partidos
             useEffect(() => {
                 if (!db) return;
 
@@ -151,19 +144,19 @@
                     snapshot.forEach((doc) => {
                         partidosData.push({ id: doc.id, ...doc.data() });
                     });
-                    // Ordenar: pretemporada por fecha, liga regular por jornada y fecha
+                    
+                    // Ordenar partidos
                     partidosData.sort((a, b) => {
                         if (a.esPretemporada && !b.esPretemporada) return -1;
                         if (!a.esPretemporada && b.esPretemporada) return 1;
-                        
                         if (!a.esPretemporada && !b.esPretemporada) {
                             if (a.jornada !== b.jornada) {
                                 return a.jornada - b.jornada;
                             }
                         }
-                        
                         return new Date(a.fecha) - new Date(b.fecha);
                     });
+                    
                     setPartidos(partidosData);
                 });
 
@@ -422,72 +415,9 @@
                                 </button>
                             </div>
                         )}
-
                     </div>
                 );
             };
-
-            if (showConfigPanel) {
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-blue-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
-                            <h2 className="text-3xl font-bold text-gray-800 mb-6">Configurar Firebase</h2>
-                            <div className="space-y-4 mb-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-                                    <input type="text" id="apiKey" className="w-full p-3 border border-gray-300 rounded-lg" placeholder="AIza..." />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Auth Domain</label>
-                                    <input type="text" id="authDomain" className="w-full p-3 border border-gray-300 rounded-lg" placeholder="tu-proyecto.firebaseapp.com" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Project ID</label>
-                                    <input type="text" id="projectId" className="w-full p-3 border border-gray-300 rounded-lg" placeholder="tu-proyecto" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Storage Bucket</label>
-                                    <input type="text" id="storageBucket" className="w-full p-3 border border-gray-300 rounded-lg" placeholder="tu-proyecto.appspot.com" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Messaging Sender ID</label>
-                                    <input type="text" id="messagingSenderId" className="w-full p-3 border border-gray-300 rounded-lg" placeholder="123456789" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">App ID</label>
-                                    <input type="text" id="appId" className="w-full p-3 border border-gray-300 rounded-lg" placeholder="1:123456789:web:..." />
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    const config = {
-                                        apiKey: document.getElementById('apiKey').value,
-                                        authDomain: document.getElementById('authDomain').value,
-                                        projectId: document.getElementById('projectId').value,
-                                        storageBucket: document.getElementById('storageBucket').value,
-                                        messagingSenderId: document.getElementById('messagingSenderId').value,
-                                        appId: document.getElementById('appId').value
-                                    };
-                                    setupFirebase(config);
-                                }}
-                                className="w-full bg-orange-600 text-white py-3 rounded-lg font-bold hover:bg-orange-700"
-                            >
-                                Conectar Firebase
-                            </button>
-                            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                                <p className="text-sm text-gray-700">
-                                    <strong>Instrucciones:</strong><br/>
-                                    1. Ve a Firebase Console (firebase.google.com)<br/>
-                                    2. Crea un nuevo proyecto<br/>
-                                    3. Añade una app web<br/>
-                                    4. Copia las credenciales aquí<br/>
-                                    5. En Firestore Database, crea una base de datos en modo test
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
 
             return (
                 <div className="min-h-screen bg-gradient-to-br from-orange-50 to-blue-50">
@@ -574,7 +504,7 @@
                                         value={formData.videoId}
                                         onChange={(e) => setFormData({...formData, videoId: e.target.value})}
                                         className="p-2 border rounded"
-                                        placeholder="YouTube Video ID"
+                                        placeholder="YouTube Video ID (opcional)"
                                     />
                                     <label className="flex items-center gap-2 p-2 border rounded">
                                         <input
