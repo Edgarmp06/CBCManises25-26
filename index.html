@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyAOG8EroOz3pn9o1fLYxbtTTV2laFBqd2s",
@@ -43,6 +43,7 @@
         let showAdminPanel = false;
         let editingPartido = null;
         let activeTab = 'calendario';
+        let unsubscribe = null;
 
         let formData = {
             fecha: '',
@@ -58,14 +59,26 @@
             enDirecto: false
         };
 
-        async function cargarPartidos() {
+        function iniciarListenerTiempoReal() {
+            // Si ya existe un listener, no crear otro
+            if (unsubscribe) return;
+
             const q = query(collection(db, 'partidos'), orderBy('fecha', 'asc'));
-            const querySnapshot = await getDocs(q);
-            partidos = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            renderizar();
+            
+            // onSnapshot actualiza automáticamente cuando hay cambios en Firestore
+            unsubscribe = onSnapshot(q, (querySnapshot) => {
+                partidos = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderizar();
+            }, (error) => {
+                console.error('Error al escuchar cambios:', error);
+            });
+        }
+
+        async function cargarPartidos() {
+            iniciarListenerTiempoReal();
         }
 
         async function añadirPartido() {
@@ -77,7 +90,7 @@
                 await addDoc(collection(db, 'partidos'), formData);
                 alert('Partido añadido correctamente');
                 resetForm();
-                await cargarPartidos();
+                // No necesitamos cargar partidos, onSnapshot lo hará automáticamente
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al añadir partido');
@@ -89,7 +102,7 @@
                 try {
                     await deleteDoc(doc(db, 'partidos', id));
                     alert('Partido eliminado');
-                    await cargarPartidos();
+                    // No necesitamos cargar partidos, onSnapshot lo hará automáticamente
                 } catch (error) {
                     console.error('Error:', error);
                     alert('Error al eliminar partido');
@@ -125,7 +138,7 @@
                 alert('Partido actualizado correctamente');
                 editingPartido = null;
                 resetForm();
-                await cargarPartidos();
+                // No necesitamos cargar partidos, onSnapshot lo hará automáticamente
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al actualizar partido');
@@ -144,7 +157,7 @@
                     [campo]: nuevoValor.toString(),
                     enDirecto: true
                 });
-                await cargarPartidos();
+                // No necesitamos cargar partidos, onSnapshot lo hará automáticamente en TODOS los dispositivos
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -362,7 +375,7 @@
                             <div>
                                 <h1 class="text-3xl font-bold">🏀 CBC Manises-Quart</h1>
                                 <p class="text-orange-100">Cadete Masculino - Preferente Grupo D</p>
-                                <p class="text-sm text-orange-200">Temporada 2025/26</p>
+                                <p class="text-sm text-orange-200">Temporada 2025/26 • 🔴 EN VIVO</p>
                             </div>
                             ${!isAdmin ? `
                                 <button
