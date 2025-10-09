@@ -5,6 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBC Manises-Quart - Cadete Masculino</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos para las fotos rotativas de fondo */
+        .contenedor-fotos {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .fondo-foto {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+        
+        .fondo-foto.activa {
+            opacity: 1;
+        }
+        
+        .fondo-1 { background-image: url('imagenes/fondo1.jpg'); }
+        .fondo-2 { background-image: url('imagenes/fondo2.jpg'); }
+        .fondo-3 { background-image: url('imagenes/fondo3.jpg'); }
+        .fondo-4 { background-image: url('imagenes/fondo4.jpg'); }
+        
+        .overlay-naranja {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom right, rgba(255, 247, 237, 0.88), rgba(254, 215, 170, 0.88));
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .contenido-web {
+            position: relative;
+            z-index: 2;
+        }
+    </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
         import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -369,7 +418,7 @@
             });
 
             app.innerHTML = `
-                <div class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
+                <div class="min-h-screen">
                     <div class="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-6 shadow-lg">
                         <div class="max-w-4xl mx-auto flex justify-between items-center">
                             <div>
@@ -653,10 +702,42 @@
         // Inicializar
         document.addEventListener('DOMContentLoaded', () => {
             cargarPartidos();
+            iniciarRotacionFotos();
         });
+        
+        // Rotación automática de fotos de fondo
+        function iniciarRotacionFotos() {
+            let fotoActual = 0;
+            const totalFotos = 4;
+            
+            setInterval(() => {
+                // Quitar clase activa de todas
+                document.querySelectorAll('.fondo-foto').forEach(foto => {
+                    foto.classList.remove('activa');
+                });
+                
+                // Siguiente foto
+                fotoActual = (fotoActual + 1) % totalFotos;
+                
+                // Añadir clase activa a la nueva foto
+                document.querySelectorAll('.fondo-foto')[fotoActual].classList.add('activa');
+            }, 6000); // Cambia cada 6 segundos
+        }
     </script>
 </head>
 <body>
-    <div id="app"></div>
+    <!-- Fotos rotativas de fondo -->
+    <div class="contenedor-fotos">
+        <div class="fondo-foto fondo-1 activa"></div>
+        <div class="fondo-foto fondo-2"></div>
+        <div class="fondo-foto fondo-3"></div>
+        <div class="fondo-foto fondo-4"></div>
+    </div>
+    
+    <!-- Capa naranja semitransparente -->
+    <div class="overlay-naranja"></div>
+    
+    <!-- Contenido principal de la web -->
+    <div id="app" class="contenido-web"></div>
 </body>
 </html>
