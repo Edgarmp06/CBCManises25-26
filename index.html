@@ -3,36 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBC Manises - Club de Baloncesto</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>CBC Manises-Quart - Cadete Masculino</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-        
-        window.firebaseModules = {
-            initializeApp,
-            getFirestore,
-            collection,
-            addDoc,
-            updateDoc,
-            deleteDoc,
-            doc,
-            onSnapshot,
-            query
-        };
-    </script>
-</head>
-<body>
-    <div id="root"></div>
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        const { initializeApp, getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } = window.firebaseModules;
-
-        // Configuración de Firebase (automática)
         const firebaseConfig = {
             apiKey: "AIzaSyAOG8EroOz3pn9o1fLYxbtTTV2laFBqd2s",
             authDomain: "cbc-manises.firebaseapp.com",
@@ -42,620 +18,632 @@
             appId: "1:756895829915:web:b70f5930703f183bf65b3e"
         };
 
-        // Iconos SVG
-        const Calendar = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-        );
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        const Trophy = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-                <path d="M4 22h16"></path>
-                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-            </svg>
-        );
+        const EQUIPOS_RIVALES = [
+            { nombre: 'Picanya Bàsquet FuturPiso', logo: 'picanya.jpg' },
+            { nombre: 'NB Torrent B', logo: 'torrent.jpg' },
+            { nombre: 'Mislata BC Verde', logo: 'mislata.jpg' },
+            { nombre: 'CB Moncada A', logo: 'moncada.jpg' },
+            { nombre: 'Picken MA A', logo: 'picken.jpg' }
+        ];
 
-        const Clock = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-        );
+        const UBICACIONES = [
+            { nombre: 'Pabellón Alberto Arnal (Manises)', esLocal: true },
+            { nombre: 'Pabellón Municipal Picanya', esLocal: false },
+            { nombre: 'Pabellón El Vedat (Torrent)', esLocal: false },
+            { nombre: 'Pabellón El Quint (Mislata)', esLocal: false },
+            { nombre: 'Pabellón Badia Pedretera (Moncada)', esLocal: false },
+            { nombre: 'Pabellón Benimaclet (Valencia)', esLocal: false }
+        ];
 
-        const Settings = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
-            </svg>
-        );
+        let partidos = [];
+        let isAdmin = false;
+        let showAdminPanel = false;
+        let editingPartido = null;
+        let activeTab = 'calendario';
 
-        const Plus = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-        );
+        let formData = {
+            fecha: '',
+            hora: '',
+            rival: '',
+            logoRival: '',
+            esLocal: true,
+            ubicacion: 'Pabellón Alberto Arnal (Manises)',
+            jornada: '',
+            finalizado: false,
+            resultadoLocal: '',
+            resultadoVisitante: '',
+            enDirecto: false
+        };
 
-        const Edit = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-        );
+        async function cargarPartidos() {
+            const q = query(collection(db, 'partidos'), orderBy('fecha', 'asc'));
+            const querySnapshot = await getDocs(q);
+            partidos = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            renderizar();
+        }
 
-        const Trash2 = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-        );
+        async function añadirPartido() {
+            if (!formData.fecha || !formData.hora || !formData.rival || !formData.ubicacion || !formData.jornada) {
+                alert('Por favor completa todos los campos obligatorios');
+                return;
+            }
+            try {
+                await addDoc(collection(db, 'partidos'), formData);
+                alert('Partido añadido correctamente');
+                resetForm();
+                await cargarPartidos();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al añadir partido');
+            }
+        }
 
-        function CBCManisesWeb() {
-            const [activeTab, setActiveTab] = useState('pretemporada');
-            const [partidos, setPartidos] = useState([]);
-            const [isAdmin, setIsAdmin] = useState(false);
-            const [showAdminPanel, setShowAdminPanel] = useState(false);
-            const [editingPartido, setEditingPartido] = useState(null);
-            const [db, setDb] = useState(null);
-            const [formData, setFormData] = useState({
-                fecha: '',
-                hora: '',
-                rival: '',
-                local: true,
-                ubicacion: 'Pabellón Alberto Arnal (Manises)',
-                jornada: 1,
-                resultado: null,
-                finalizado: false,
-                enDirecto: false,
-                videoId: '',
-                marcadorLocal: 0,
-                marcadorVisitante: 0,
-                esPretemporada: false
-            });
-
-            // Inicializar Firebase automáticamente
-            useEffect(() => {
-                try {
-                    const app = initializeApp(firebaseConfig);
-                    const firestore = getFirestore(app);
-                    setDb(firestore);
-                } catch (error) {
-                    console.error('Error conectando con Firebase:', error);
-                }
-            }, []);
-
-            // Escuchar cambios en partidos
-            useEffect(() => {
-                if (!db) return;
-
-                const q = query(collection(db, 'partidos'));
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const partidosData = [];
-                    snapshot.forEach((doc) => {
-                        partidosData.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    // Ordenar partidos
-                    partidosData.sort((a, b) => {
-                        if (a.esPretemporada && !b.esPretemporada) return -1;
-                        if (!a.esPretemporada && b.esPretemporada) return 1;
-                        if (!a.esPretemporada && !b.esPretemporada) {
-                            if (a.jornada !== b.jornada) {
-                                return a.jornada - b.jornada;
-                            }
-                        }
-                        return new Date(a.fecha) - new Date(b.fecha);
-                    });
-                    
-                    setPartidos(partidosData);
-                });
-
-                return () => unsubscribe();
-            }, [db]);
-
-            const addPartido = async () => {
-                if (!db) return;
-                try {
-                    await addDoc(collection(db, 'partidos'), formData);
-                    resetForm();
-                    alert('Partido añadido correctamente');
-                } catch (error) {
-                    alert('Error: ' + error.message);
-                }
-            };
-
-            const updatePartido = async () => {
-                if (!db || !editingPartido) return;
-                try {
-                    await updateDoc(doc(db, 'partidos', editingPartido.id), formData);
-                    setEditingPartido(null);
-                    resetForm();
-                    alert('Partido actualizado correctamente');
-                } catch (error) {
-                    alert('Error: ' + error.message);
-                }
-            };
-
-            const deletePartido = async (id) => {
-                if (!db || !confirm('¿Seguro que quieres eliminar este partido?')) return;
+        async function eliminarPartido(id) {
+            if (confirm('¿Estás seguro de eliminar este partido?')) {
                 try {
                     await deleteDoc(doc(db, 'partidos', id));
                     alert('Partido eliminado');
+                    await cargarPartidos();
                 } catch (error) {
-                    alert('Error: ' + error.message);
+                    console.error('Error:', error);
+                    alert('Error al eliminar partido');
                 }
-            };
-
-            const updateLiveScore = async (partidoId, home, away) => {
-                if (!db) return;
-                try {
-                    await updateDoc(doc(db, 'partidos', partidoId), {
-                        marcadorLocal: home,
-                        marcadorVisitante: away
-                    });
-                } catch (error) {
-                    console.error('Error actualizando marcador:', error);
-                }
-            };
-
-            const startLiveMatch = async (partidoId) => {
-                if (!db) return;
-                try {
-                    await updateDoc(doc(db, 'partidos', partidoId), {
-                        enDirecto: true,
-                        marcadorLocal: 0,
-                        marcadorVisitante: 0
-                    });
-                } catch (error) {
-                    alert('Error: ' + error.message);
-                }
-            };
-
-            const finishMatch = async (partidoId, local, visitante) => {
-                if (!db) return;
-                try {
-                    await updateDoc(doc(db, 'partidos', partidoId), {
-                        enDirecto: false,
-                        finalizado: true,
-                        resultado: { local, visitante }
-                    });
-                    alert('Partido finalizado');
-                } catch (error) {
-                    alert('Error: ' + error.message);
-                }
-            };
-
-            const resetForm = () => {
-                setFormData({
-                    fecha: '',
-                    hora: '',
-                    rival: '',
-                    local: true,
-                    ubicacion: 'Pabellón Alberto Arnal (Manises)',
-                    jornada: 1,
-                    resultado: null,
-                    finalizado: false,
-                    enDirecto: false,
-                    videoId: '',
-                    marcadorLocal: 0,
-                    marcadorVisitante: 0,
-                    esPretemporada: false
-                });
-            };
-
-            const PartidoCard = ({ partido }) => {
-                const esLocal = partido.local;
-                const nombreEquipo = 'CBC Manises';
-
-                return (
-                    <div className="bg-white rounded-lg shadow-md p-6 mb-4 hover:shadow-lg transition-shadow">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                {partido.esPretemporada ? (
-                                    <span className="text-sm font-semibold bg-yellow-400 text-orange-900 px-2 py-1 rounded">
-                                        PRETEMPORADA
-                                    </span>
-                                ) : (
-                                    <span className="text-sm font-semibold text-orange-600">Jornada {partido.jornada}</span>
-                                )}
-                                <a 
-                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(partido.ubicacion)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 block"
-                                >
-                                    📍 {partido.ubicacion}
-                                </a>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-sm font-medium text-gray-700">{partido.fecha}</p>
-                                <p className="text-sm text-gray-500">{partido.hora}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex-1 text-right pr-4">
-                                <p className={`font-bold text-lg ${esLocal ? 'text-orange-600' : 'text-gray-800'}`}>
-                                    {esLocal ? nombreEquipo : partido.rival}
-                                </p>
-                                {esLocal && <span className="text-xs text-gray-500">Local</span>}
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                {partido.finalizado ? (
-                                    <div className="text-center bg-gray-100 rounded-lg px-6 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-2xl font-bold text-gray-800">
-                                                {esLocal ? partido.resultado.local : partido.resultado.visitante}
-                                            </span>
-                                            <span className="text-xl text-gray-400">-</span>
-                                            <span className="text-2xl font-bold text-gray-800">
-                                                {esLocal ? partido.resultado.visitante : partido.resultado.local}
-                                            </span>
-                                        </div>
-                                        <span className="text-xs text-green-600 font-medium">FINAL</span>
-                                    </div>
-                                ) : partido.enDirecto ? (
-                                    <div className="text-center bg-red-50 rounded-lg px-6 py-3 border-2 border-red-500">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-2xl font-bold text-red-600">
-                                                {esLocal ? partido.marcadorLocal : partido.marcadorVisitante}
-                                            </span>
-                                            <span className="text-xl text-red-400">-</span>
-                                            <span className="text-2xl font-bold text-red-600">
-                                                {esLocal ? partido.marcadorVisitante : partido.marcadorLocal}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-center gap-1 mt-1">
-                                            <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
-                                            <span className="text-xs text-red-600 font-bold">EN DIRECTO</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-center bg-blue-50 rounded-lg px-6 py-3">
-                                        <Clock className="w-6 h-6 text-blue-600 mx-auto mb-1" />
-                                        <span className="text-xs text-blue-600 font-medium">PRÓXIMO</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex-1 pl-4">
-                                <p className={`font-bold text-lg ${!esLocal ? 'text-orange-600' : 'text-gray-800'}`}>
-                                    {!esLocal ? nombreEquipo : partido.rival}
-                                </p>
-                                {!esLocal && <span className="text-xs text-gray-500">Visitante</span>}
-                            </div>
-                        </div>
-
-                        {isAdmin && (
-                            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
-                                {partido.enDirecto && (
-                                    <>
-                                        <div className="flex-1 flex gap-2">
-                                            <button
-                                                onClick={() => updateLiveScore(partido.id, partido.marcadorLocal + 1, partido.marcadorVisitante)}
-                                                className="flex-1 bg-orange-600 text-white py-2 px-3 rounded text-sm hover:bg-orange-700"
-                                            >
-                                                +1 Local
-                                            </button>
-                                            <button
-                                                onClick={() => updateLiveScore(partido.id, partido.marcadorLocal + 2, partido.marcadorVisitante)}
-                                                className="flex-1 bg-orange-600 text-white py-2 px-3 rounded text-sm hover:bg-orange-700"
-                                            >
-                                                +2 Local
-                                            </button>
-                                            <button
-                                                onClick={() => updateLiveScore(partido.id, partido.marcadorLocal + 3, partido.marcadorVisitante)}
-                                                className="flex-1 bg-orange-600 text-white py-2 px-3 rounded text-sm hover:bg-orange-700"
-                                            >
-                                                +3 Local
-                                            </button>
-                                        </div>
-                                        <div className="flex-1 flex gap-2">
-                                            <button
-                                                onClick={() => updateLiveScore(partido.id, partido.marcadorLocal, partido.marcadorVisitante + 1)}
-                                                className="flex-1 bg-gray-600 text-white py-2 px-3 rounded text-sm hover:bg-gray-700"
-                                            >
-                                                +1 Visit
-                                            </button>
-                                            <button
-                                                onClick={() => updateLiveScore(partido.id, partido.marcadorLocal, partido.marcadorVisitante + 2)}
-                                                className="flex-1 bg-gray-600 text-white py-2 px-3 rounded text-sm hover:bg-gray-700"
-                                            >
-                                                +2 Visit
-                                            </button>
-                                            <button
-                                                onClick={() => updateLiveScore(partido.id, partido.marcadorLocal, partido.marcadorVisitante + 3)}
-                                                className="flex-1 bg-gray-600 text-white py-2 px-3 rounded text-sm hover:bg-gray-700"
-                                            >
-                                                +3 Visit
-                                            </button>
-                                        </div>
-                                        <button
-                                            onClick={() => finishMatch(partido.id, partido.marcadorLocal, partido.marcadorVisitante)}
-                                            className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
-                                        >
-                                            Finalizar
-                                        </button>
-                                    </>
-                                )}
-                                {!partido.enDirecto && !partido.finalizado && (
-                                    <button
-                                        onClick={() => startLiveMatch(partido.id)}
-                                        className="flex-1 bg-red-600 text-white py-2 rounded hover:bg-red-700"
-                                    >
-                                        Iniciar En Directo
-                                    </button>
-                                )}
-                                <button
-                                    onClick={() => {
-                                        setEditingPartido(partido);
-                                        setFormData(partido);
-                                        setShowAdminPanel(true);
-                                    }}
-                                    className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => deletePartido(partido.id)}
-                                    className="bg-red-600 text-white p-2 rounded hover:bg-red-700"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                );
-            };
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-orange-50 to-blue-50">
-                    <header className="bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg">
-                        <div className="container mx-auto px-4 py-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h1 className="text-4xl font-bold mb-2">CBC Manises</h1>
-                                    <p className="text-orange-100">Club de Baloncesto - Temporada 2025/26</p>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    {!isAdmin ? (
-                                        <button
-                                            onClick={async () => {
-                                                const pass = prompt('Contraseña de administrador:');
-                                                if (!pass) return;
-                                                
-                                                // Hash SHA-256 de la contraseña
-                                                const encoder = new TextEncoder();
-                                                const data = encoder.encode(pass);
-                                                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-                                                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                                                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-                                                
-                                                // Hash de "edgar123"
-                                                const validHash = '43EB7F6D19D80FC4DC42280FB885E3111E1AE1F586A9188A49853280B9C04EF0';
-                                                
-                                                if (hashHex === validHash) {
-                                                    setIsAdmin(true);
-                                                    alert('Acceso concedido');
-                                                } else {
-                                                    alert('Contraseña incorrecta');
-                                                }
-                                            }}
-                                            className="bg-white text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-50"
-                                        >
-                                            <Settings className="w-5 h-5" />
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => setShowAdminPanel(!showAdminPanel)}
-                                            className="bg-white text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-50 flex items-center gap-2"
-                                        >
-                                            <Plus className="w-5 h-5" />
-                                            Gestionar
-                                        </button>
-                                    )}
-                                    <Trophy className="w-16 h-16 opacity-80" />
-                                </div>
-                            </div>
-                        </div>
-                    </header>
-
-                    {isAdmin && showAdminPanel && (
-                        <div className="bg-white border-b shadow-lg">
-                            <div className="container mx-auto px-4 py-6">
-                                <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                                    {editingPartido ? 'Editar Partido' : 'Añadir Nuevo Partido'}
-                                </h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input
-                                        type="date"
-                                        value={formData.fecha}
-                                        onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                                        className="p-2 border rounded"
-                                    />
-                                    <input
-                                        type="time"
-                                        value={formData.hora}
-                                        onChange={(e) => setFormData({...formData, hora: e.target.value})}
-                                        className="p-2 border rounded"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={formData.rival}
-                                        onChange={(e) => setFormData({...formData, rival: e.target.value})}
-                                        className="p-2 border rounded"
-                                        placeholder="Rival"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={formData.ubicacion}
-                                        onChange={(e) => setFormData({...formData, ubicacion: e.target.value})}
-                                        className="p-2 border rounded"
-                                        placeholder="Ubicación"
-                                    />
-                                    <input
-                                        type="number"
-                                        value={formData.jornada}
-                                        onChange={(e) => setFormData({...formData, jornada: parseInt(e.target.value)})}
-                                        className="p-2 border rounded"
-                                        placeholder="Jornada"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={formData.videoId}
-                                        onChange={(e) => setFormData({...formData, videoId: e.target.value})}
-                                        className="p-2 border rounded"
-                                        placeholder="YouTube Video ID (opcional)"
-                                    />
-                                    <label className="flex items-center gap-2 p-2 border rounded">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.local}
-                                            onChange={(e) => setFormData({...formData, local: e.target.checked})}
-                                        />
-                                        Partido en casa
-                                    </label>
-                                    <label className="flex items-center gap-2 p-2 border rounded bg-yellow-50">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.esPretemporada}
-                                            onChange={(e) => setFormData({...formData, esPretemporada: e.target.checked})}
-                                        />
-                                        <span className="font-semibold">Partido de pretemporada</span>
-                                    </label>
-                                </div>
-                                <div className="flex gap-2 mt-4">
-                                    <button
-                                        onClick={editingPartido ? updatePartido : addPartido}
-                                        className="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700"
-                                    >
-                                        {editingPartido ? 'Actualizar' : 'Añadir'} Partido
-                                    </button>
-                                    {editingPartido && (
-                                        <button
-                                            onClick={() => {
-                                                setEditingPartido(null);
-                                                resetForm();
-                                            }}
-                                            className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-700"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <nav className="bg-white shadow-md sticky top-0 z-10">
-                        <div className="container mx-auto px-4">
-                            <div className="flex gap-1">
-                                <button
-                                    onClick={() => setActiveTab('pretemporada')}
-                                    className={`flex items-center gap-2 px-6 py-4 font-semibold transition-colors ${
-                                        activeTab === 'pretemporada'
-                                            ? 'text-orange-600 border-b-4 border-orange-600'
-                                            : 'text-gray-600 hover:text-orange-600'
-                                    }`}
-                                >
-                                    <Trophy className="w-5 h-5" />
-                                    Pretemporada
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('calendario')}
-                                    className={`flex items-center gap-2 px-6 py-4 font-semibold transition-colors ${
-                                        activeTab === 'calendario'
-                                            ? 'text-orange-600 border-b-4 border-orange-600'
-                                            : 'text-gray-600 hover:text-orange-600'
-                                    }`}
-                                >
-                                    <Calendar className="w-5 h-5" />
-                                    Calendario
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('resultados')}
-                                    className={`flex items-center gap-2 px-6 py-4 font-semibold transition-colors ${
-                                        activeTab === 'resultados'
-                                            ? 'text-orange-600 border-b-4 border-orange-600'
-                                            : 'text-gray-600 hover:text-orange-600'
-                                    }`}
-                                >
-                                    <Trophy className="w-5 h-5" />
-                                    Resultados
-                                </button>
-                            </div>
-                        </div>
-                    </nav>
-
-                    <main className="container mx-auto px-4 py-8">
-                        {activeTab === 'pretemporada' && (
-                            <div>
-                                <h2 className="text-3xl font-bold text-gray-800 mb-6">Pretemporada 2025/26</h2>
-                                {partidos.filter(p => p.esPretemporada).length === 0 ? (
-                                    <div className="text-center py-12 text-gray-500">
-                                        <Trophy className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                        <p className="text-xl">No hay partidos de pretemporada</p>
-                                        {isAdmin && <p className="text-sm mt-2">Usa el panel de gestión para añadir partidos</p>}
-                                    </div>
-                                ) : (
-                                    partidos.filter(p => p.esPretemporada).map(partido => <PartidoCard key={partido.id} partido={partido} />)
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'calendario' && (
-                            <div>
-                                <h2 className="text-3xl font-bold text-gray-800 mb-6">Calendario de Partidos - Liga Regular</h2>
-                                {partidos.filter(p => !p.esPretemporada).length === 0 ? (
-                                    <div className="text-center py-12 text-gray-500">
-                                        <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                        <p className="text-xl">No hay partidos programados</p>
-                                        {isAdmin && <p className="text-sm mt-2">Usa el panel de gestión para añadir partidos</p>}
-                                    </div>
-                                ) : (
-                                    partidos.filter(p => !p.esPretemporada).map(partido => <PartidoCard key={partido.id} partido={partido} />)
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'resultados' && (
-                            <div>
-                                <h2 className="text-3xl font-bold text-gray-800 mb-6">Resultados - Liga Regular</h2>
-                                {partidos.filter(p => p.finalizado && !p.esPretemporada).length === 0 ? (
-                                    <div className="text-center py-12 text-gray-500">
-                                        <Trophy className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                        <p className="text-xl">Aún no hay resultados disponibles</p>
-                                    </div>
-                                ) : (
-                                    partidos.filter(p => p.finalizado && !p.esPretemporada).map(partido => (
-                                        <PartidoCard key={partido.id} partido={partido} />
-                                    ))
-                                )}
-                            </div>
-                        )}
-                    </main>
-
-                    <footer className="bg-gray-800 text-white mt-12 py-6">
-                        <div className="container mx-auto px-4 text-center">
-                            <p className="text-gray-400">© 2025 CBC Manises - Club de Baloncesto</p>
-                        </div>
-                    </footer>
-                </div>
-            );
+            }
         }
 
-        ReactDOM.render(<CBCManisesWeb />, document.getElementById('root'));
+        function editarPartido(partido) {
+            editingPartido = partido;
+            formData = {
+                fecha: partido.fecha || '',
+                hora: partido.hora || '',
+                rival: partido.rival || '',
+                logoRival: partido.logoRival || '',
+                esLocal: partido.esLocal !== undefined ? partido.esLocal : true,
+                ubicacion: partido.ubicacion || 'Pabellón Alberto Arnal (Manises)',
+                jornada: partido.jornada || '',
+                finalizado: partido.finalizado || false,
+                resultadoLocal: partido.resultadoLocal || '',
+                resultadoVisitante: partido.resultadoVisitante || '',
+                enDirecto: partido.enDirecto || false
+            };
+            renderizar();
+        }
+
+        async function actualizarPartido() {
+            if (!formData.fecha || !formData.hora || !formData.rival || !formData.ubicacion || !formData.jornada) {
+                alert('Por favor completa todos los campos obligatorios');
+                return;
+            }
+            try {
+                await updateDoc(doc(db, 'partidos', editingPartido.id), formData);
+                alert('Partido actualizado correctamente');
+                editingPartido = null;
+                resetForm();
+                await cargarPartidos();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al actualizar partido');
+            }
+        }
+
+        async function actualizarMarcador(id, campo, incremento) {
+            const partido = partidos.find(p => p.id === id);
+            if (!partido) return;
+
+            const nuevoValor = parseInt(partido[campo] || 0) + incremento;
+            if (nuevoValor < 0) return;
+
+            try {
+                await updateDoc(doc(db, 'partidos', id), {
+                    [campo]: nuevoValor.toString(),
+                    enDirecto: true
+                });
+                await cargarPartidos();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function resetForm() {
+            formData = {
+                fecha: '',
+                hora: '',
+                rival: '',
+                logoRival: '',
+                esLocal: true,
+                ubicacion: 'Pabellón Alberto Arnal (Manises)',
+                jornada: '',
+                finalizado: false,
+                resultadoLocal: '',
+                resultadoVisitante: '',
+                enDirecto: false
+            };
+        }
+
+        function handleInputChange(name, value) {
+            formData[name] = value;
+
+            if (name === 'rival') {
+                const equipoSeleccionado = EQUIPOS_RIVALES.find(e => e.nombre === value);
+                if (equipoSeleccionado) {
+                    formData.logoRival = equipoSeleccionado.logo;
+                }
+            }
+
+            if (name === 'ubicacion') {
+                const ubicacionSeleccionada = UBICACIONES.find(u => u.nombre === value);
+                if (ubicacionSeleccionada) {
+                    formData.esLocal = ubicacionSeleccionada.esLocal;
+                }
+            }
+
+            renderizar();
+        }
+
+        async function handleAdminLogin() {
+            const pass = prompt('Contraseña de administrador:');
+            if (!pass) return;
+
+            const encoder = new TextEncoder();
+            const data = encoder.encode(pass);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+            const validHash = '43EB7F6D19D80FC4DC42280FB885E3111E1AE1F586A9188A49853280B9C04EF0';
+
+            if (hashHex === validHash) {
+                isAdmin = true;
+                alert('Acceso concedido');
+                renderizar();
+            } else {
+                alert('Contraseña incorrecta');
+            }
+        }
+
+        function generarPartidoCard(partido) {
+            const equipoLocal = partido.esLocal ? 'CBC Manises-Quart' : partido.rival;
+            const equipoVisitante = partido.esLocal ? partido.rival : 'CBC Manises-Quart';
+            const logoLocal = partido.esLocal ? 'logos/cbc-manises.jpg' : `logos/${partido.logoRival}`;
+            const logoVisitante = partido.esLocal ? `logos/${partido.logoRival}` : 'logos/cbc-manises.jpg';
+
+            return `
+                <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+                    ${partido.jornada ? `
+                        <div class="text-center mb-4">
+                            <span class="bg-orange-500 text-white px-4 py-1 rounded-full text-sm font-bold">
+                                Jornada ${partido.jornada}
+                            </span>
+                        </div>
+                    ` : ''}
+
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1 text-center">
+                            <div class="w-20 h-20 mx-auto mb-2 flex items-center justify-center">
+                                <img 
+                                    src="${logoLocal}"
+                                    alt="${equipoLocal}"
+                                    class="max-w-full max-h-full object-contain"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                />
+                                <div style="display:none" class="w-20 h-20 bg-gray-200 rounded-full items-center justify-center">
+                                    <span class="text-2xl">🏀</span>
+                                </div>
+                            </div>
+                            <p class="font-bold text-gray-800 text-sm">${equipoLocal}</p>
+                        </div>
+
+                        <div class="text-center px-4">
+                            ${partido.finalizado ? `
+                                <div class="text-3xl font-bold text-gray-800">
+                                    <div>${partido.resultadoLocal || '0'}</div>
+                                    <div class="text-sm text-gray-500 my-1">-</div>
+                                    <div>${partido.resultadoVisitante || '0'}</div>
+                                </div>
+                            ` : partido.enDirecto ? `
+                                <div>
+                                    <div class="text-red-600 text-xs font-bold mb-2 animate-pulse">● EN DIRECTO</div>
+                                    <div class="text-3xl font-bold text-gray-800">
+                                        <div>${partido.resultadoLocal || '0'}</div>
+                                        <div class="text-sm text-gray-500 my-1">-</div>
+                                        <div>${partido.resultadoVisitante || '0'}</div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="text-2xl font-bold text-gray-600">
+                                    <div class="text-sm text-gray-500 mb-1">VS</div>
+                                    <div>${partido.hora}</div>
+                                </div>
+                            `}
+                        </div>
+
+                        <div class="flex-1 text-center">
+                            <div class="w-20 h-20 mx-auto mb-2 flex items-center justify-center">
+                                <img 
+                                    src="${logoVisitante}"
+                                    alt="${equipoVisitante}"
+                                    class="max-w-full max-h-full object-contain"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                />
+                                <div style="display:none" class="w-20 h-20 bg-gray-200 rounded-full items-center justify-center">
+                                    <span class="text-2xl">🏀</span>
+                                </div>
+                            </div>
+                            <p class="font-bold text-gray-800 text-sm">${equipoVisitante}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600 text-center">
+                        <p>📅 ${new Date(partido.fecha + 'T00:00:00').toLocaleDateString('es-ES', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        })}</p>
+                        <p class="mt-1">
+                            📍 <a 
+                                href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(partido.ubicacion)}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-blue-600 hover:underline"
+                            >
+                                ${partido.ubicacion}
+                            </a>
+                        </p>
+                    </div>
+
+                    ${isAdmin && !partido.finalizado ? `
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-center text-sm font-bold text-gray-700 mb-2">Control de Marcador</p>
+                            <div class="flex gap-4 justify-center">
+                                <div class="text-center">
+                                    <p class="text-xs mb-1">${equipoLocal}</p>
+                                    <div class="flex gap-1">
+                                        <button onclick="window.actualizarMarcador('${partido.id}', 'resultadoLocal', 1)" class="bg-green-500 text-white px-2 py-1 rounded text-xs">+1</button>
+                                        <button onclick="window.actualizarMarcador('${partido.id}', 'resultadoLocal', 2)" class="bg-green-600 text-white px-2 py-1 rounded text-xs">+2</button>
+                                        <button onclick="window.actualizarMarcador('${partido.id}', 'resultadoLocal', 3)" class="bg-green-700 text-white px-2 py-1 rounded text-xs">+3</button>
+                                        <button onclick="window.actualizarMarcador('${partido.id}', 'resultadoLocal', -1)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">-1</button>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs mb-1">${equipoVisitante}</p>
+                                    <div class="flex gap-1">
+                                        <button onclick="window.actualizarMarcador('${partido.id}', 'resultadoVisitante', 1)" class="bg-green-500 text-white px-2 py-1 rounded text-xs">+1</button>
+                                        <button onclick="window.actualizarMarcador('${partido.id}', 'resultadoVisitante', 2)" class="bg-green-600 text-white px-2 py-1 rounded text-xs">+2</button>
+                                        <button onclick="window.actualizarMarcador('${partido.id}', 'resultadoVisitante', 3)" class="bg-green-700 text-white px-2 py-1 rounded text-xs">+3</button>
+                                        <button onclick="window.actualizarMarcador('${partido.id}', 'resultadoVisitante', -1)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">-1</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${isAdmin ? `
+                        <div class="mt-4 flex gap-2 justify-center">
+                            <button onclick="window.editarPartidoGlobal('${partido.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">✏️ Editar</button>
+                            <button onclick="window.eliminarPartidoGlobal('${partido.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">🗑️ Eliminar</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderizar() {
+            const app = document.getElementById('app');
+            
+            const partidosCalendario = partidos.filter(p => !p.finalizado).sort((a, b) => {
+                if (a.jornada && b.jornada) {
+                    const jornadaA = parseInt(a.jornada);
+                    const jornadaB = parseInt(b.jornada);
+                    if (jornadaA !== jornadaB) return jornadaA - jornadaB;
+                }
+                return new Date(a.fecha) - new Date(b.fecha);
+            });
+
+            const partidosFinalizados = partidos.filter(p => p.finalizado).sort((a, b) => {
+                if (a.jornada && b.jornada) {
+                    const jornadaA = parseInt(a.jornada);
+                    const jornadaB = parseInt(b.jornada);
+                    if (jornadaA !== jornadaB) return jornadaB - jornadaA;
+                }
+                return new Date(b.fecha) - new Date(a.fecha);
+            });
+
+            app.innerHTML = `
+                <div class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
+                    <div class="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-6 shadow-lg">
+                        <div class="max-w-4xl mx-auto flex justify-between items-center">
+                            <div>
+                                <h1 class="text-3xl font-bold">🏀 CBC Manises-Quart</h1>
+                                <p class="text-orange-100">Cadete Masculino - Preferente Grupo D</p>
+                                <p class="text-sm text-orange-200">Temporada 2025/26</p>
+                            </div>
+                            ${!isAdmin ? `
+                                <button
+                                    onclick="window.handleAdminLoginGlobal()"
+                                    class="bg-white text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-50"
+                                >
+                                    ⚙️ Admin
+                                </button>
+                            ` : `
+                                <div class="flex gap-2">
+                                    <button
+                                        onclick="window.toggleAdminPanel()"
+                                        class="bg-white text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-50"
+                                    >
+                                        ${showAdminPanel ? '👁️ Ver Web' : '⚙️ Gestionar'}
+                                    </button>
+                                    <button
+                                        onclick="window.logout()"
+                                        class="bg-orange-700 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-800"
+                                    >
+                                        🚪 Salir
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+
+                    <div class="max-w-4xl mx-auto p-4">
+                        ${showAdminPanel ? `
+                            <div class="bg-white rounded-lg shadow-lg p-6">
+                                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                                    ${editingPartido ? '✏️ Editar Partido' : '➕ Añadir Nuevo Partido'}
+                                </h2>
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
+                                            <input
+                                                type="date"
+                                                value="${formData.fecha}"
+                                                onchange="window.handleInputChangeGlobal('fecha', this.value)"
+                                                class="w-full border p-2 rounded"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Hora *</label>
+                                            <input
+                                                type="time"
+                                                value="${formData.hora}"
+                                                onchange="window.handleInputChangeGlobal('hora', this.value)"
+                                                class="w-full border p-2 rounded"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Rival *</label>
+                                        <select
+                                            value="${formData.rival}"
+                                            onchange="window.handleInputChangeGlobal('rival', this.value)"
+                                            class="w-full border p-2 rounded"
+                                        >
+                                            <option value="">Selecciona el equipo rival</option>
+                                            ${EQUIPOS_RIVALES.map(equipo => `
+                                                <option value="${equipo.nombre}" ${formData.rival === equipo.nombre ? 'selected' : ''}>
+                                                    ${equipo.nombre}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación *</label>
+                                        <select
+                                            value="${formData.ubicacion}"
+                                            onchange="window.handleInputChangeGlobal('ubicacion', this.value)"
+                                            class="w-full border p-2 rounded"
+                                        >
+                                            ${UBICACIONES.map(ubicacion => `
+                                                <option value="${ubicacion.nombre}" ${formData.ubicacion === ubicacion.nombre ? 'selected' : ''}>
+                                                    ${ubicacion.nombre} ${ubicacion.esLocal ? '🏠' : '✈️'}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Jornada *</label>
+                                        <select
+                                            value="${formData.jornada}"
+                                            onchange="window.handleInputChangeGlobal('jornada', this.value)"
+                                            class="w-full border p-2 rounded"
+                                        >
+                                            <option value="">Selecciona la jornada</option>
+                                            ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => `
+                                                <option value="${num}" ${formData.jornada == num ? 'selected' : ''}>Jornada ${num}</option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+
+                                    <div class="flex gap-4 items-center">
+                                        <label class="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                ${formData.finalizado ? 'checked' : ''}
+                                                onchange="window.handleInputChangeGlobal('finalizado', this.checked)"
+                                            />
+                                            <span class="text-sm font-medium">Partido finalizado</span>
+                                        </label>
+                                    </div>
+
+                                    ${formData.finalizado ? `
+                                        <div class="bg-gray-50 p-4 rounded">
+                                            <h3 class="font-bold text-gray-700 mb-2">Resultado Final</h3>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                                        ${formData.esLocal ? 'CBC Manises-Quart' : formData.rival || 'Local'}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Puntos"
+                                                        value="${formData.resultadoLocal}"
+                                                        onchange="window.handleInputChangeGlobal('resultadoLocal', this.value)"
+                                                        class="w-full border p-2 rounded"
+                                                        min="0"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                                        ${formData.esLocal ? formData.rival || 'Visitante' : 'CBC Manises-Quart'}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Puntos"
+                                                        value="${formData.resultadoVisitante}"
+                                                        onchange="window.handleInputChangeGlobal('resultadoVisitante', this.value)"
+                                                        class="w-full border p-2 rounded"
+                                                        min="0"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    <div class="flex gap-2 pt-4">
+                                        <button
+                                            onclick="${editingPartido ? 'window.actualizarPartidoGlobal()' : 'window.añadirPartidoGlobal()'}"
+                                            class="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 flex-1"
+                                        >
+                                            ${editingPartido ? '💾 Actualizar Partido' : '➕ Añadir Partido'}
+                                        </button>
+                                        ${editingPartido ? `
+                                            <button
+                                                onclick="window.cancelarEdicion()"
+                                                class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600"
+                                            >
+                                                ❌ Cancelar
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                <div class="mt-8">
+                                    <h3 class="text-xl font-bold text-gray-800 mb-4">📋 Todos los Partidos</h3>
+                                    ${partidos.length === 0 ? `
+                                        <p class="text-gray-500 text-center py-8">No hay partidos registrados</p>
+                                    ` : `
+                                        <div class="space-y-3">
+                                            ${partidos.map(partido => `
+                                                <div class="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-50">
+                                                    <div>
+                                                        <p class="font-bold text-gray-800">
+                                                            ${partido.rival} ${partido.finalizado ? '✅' : ''}
+                                                        </p>
+                                                        <p class="text-sm text-gray-600">
+                                                            📅 ${new Date(partido.fecha + 'T00:00:00').toLocaleDateString('es-ES')} - ⏰ ${partido.hora}
+                                                        </p>
+                                                        <p class="text-xs text-gray-500">
+                                                            ${partido.esLocal ? '🏠 Casa' : '✈️ Fuera'} | Jornada ${partido.jornada} | 📍 ${partido.ubicacion}
+                                                        </p>
+                                                        ${partido.finalizado ? `
+                                                            <p class="text-sm font-bold text-orange-600 mt-1">
+                                                                Resultado: ${partido.resultadoLocal} - ${partido.resultadoVisitante}
+                                                            </p>
+                                                        ` : ''}
+                                                    </div>
+                                                    <div class="flex gap-2">
+                                                        <button onclick="window.editarPartidoGlobal('${partido.id}')" class="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600">✏️</button>
+                                                        <button onclick="window.eliminarPartidoGlobal('${partido.id}')" class="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">🗑️</button>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="bg-white rounded-lg shadow-md mb-6 p-2 flex gap-2">
+                                <button
+                                    onclick="window.cambiarTab('calendario')"
+                                    class="flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
+                                        activeTab === 'calendario'
+                                            ? 'bg-orange-600 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }"
+                                >
+                                    📅 Calendario
+                                </button>
+                                <button
+                                    onclick="window.cambiarTab('resultados')"
+                                    class="flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
+                                        activeTab === 'resultados'
+                                            ? 'bg-orange-600 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }"
+                                >
+                                    🏆 Resultados
+                                </button>
+                            </div>
+
+                            <div>
+                                ${activeTab === 'calendario' ? `
+                                    <div>
+                                        <h2 class="text-2xl font-bold text-gray-800 mb-4">📅 Próximos Partidos</h2>
+                                        ${partidosCalendario.length === 0 ? `
+                                            <p class="text-gray-500 text-center py-8">No hay partidos programados</p>
+                                        ` : partidosCalendario.map(p => generarPartidoCard(p)).join('')}
+                                    </div>
+                                ` : `
+                                    <div>
+                                        <h2 class="text-2xl font-bold text-gray-800 mb-4">🏆 Resultados</h2>
+                                        ${partidosFinalizados.length === 0 ? `
+                                            <p class="text-gray-500 text-center py-8">No hay resultados todavía</p>
+                                        ` : partidosFinalizados.map(p => generarPartidoCard(p)).join('')}
+                                    </div>
+                                `}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funciones globales
+        window.handleAdminLoginGlobal = handleAdminLogin;
+        window.handleInputChangeGlobal = handleInputChange;
+        window.añadirPartidoGlobal = añadirPartido;
+        window.actualizarPartidoGlobal = actualizarPartido;
+        window.actualizarMarcador = actualizarMarcador;
+        window.editarPartidoGlobal = (id) => {
+            const partido = partidos.find(p => p.id === id);
+            if (partido) editarPartido(partido);
+        };
+        window.eliminarPartidoGlobal = eliminarPartido;
+        window.toggleAdminPanel = () => {
+            showAdminPanel = !showAdminPanel;
+            renderizar();
+        };
+        window.logout = () => {
+            isAdmin = false;
+            showAdminPanel = false;
+            renderizar();
+        };
+        window.cambiarTab = (tab) => {
+            activeTab = tab;
+            renderizar();
+        };
+        window.cancelarEdicion = () => {
+            editingPartido = null;
+            resetForm();
+            renderizar();
+        };
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarPartidos();
+        });
     </script>
+</head>
+<body>
+    <div id="app"></div>
 </body>
 </html>
