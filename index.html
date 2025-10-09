@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBC Manises-Quart - Cadete Masculino</title>
-        <link rel="icon" href="logos/cbc-manises.jpg">
+    <link rel="icon" href="logos/cbc-manises.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="/_vercel/insights/script.js"></script>
     <style>
-        /* Estilos para las fotos rotativas de fondo */
         .contenedor-fotos {
             position: fixed;
             top: 0;
@@ -56,9 +55,22 @@
             z-index: 2;
         }
     </style>
+</head>
+<body>
+    <div class="contenedor-fotos">
+        <div class="fondo-foto fondo-1 activa"></div>
+        <div class="fondo-foto fondo-2"></div>
+        <div class="fondo-foto fondo-3"></div>
+        <div class="fondo-foto fondo-4"></div>
+    </div>
+    
+    <div class="overlay-naranja"></div>
+    
+    <div id="app" class="contenido-web"></div>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyAOG8EroOz3pn9o1fLYxbtTTV2laFBqd2s",
@@ -95,6 +107,7 @@
         let editingPartido = null;
         let activeTab = 'calendario';
         let unsubscribe = null;
+        let mostrarUbicacionManual = false;
 
         let formData = {
             fecha: '',
@@ -103,6 +116,7 @@
             logoRival: '',
             esLocal: true,
             ubicacion: 'Pabellón Alberto Arnal (Manises)',
+            ubicacionPersonalizada: '',
             jornada: '',
             finalizado: false,
             resultadoLocal: '',
@@ -111,20 +125,14 @@
         };
 
         function iniciarListenerTiempoReal() {
-            // Si ya existe un listener, no crear otro
             if (unsubscribe) return;
-
             const q = query(collection(db, 'partidos'), orderBy('fecha', 'asc'));
-            
-            // onSnapshot actualiza automáticamente cuando hay cambios en Firestore
             unsubscribe = onSnapshot(q, (querySnapshot) => {
                 partidos = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
                 renderizar();
-            }, (error) => {
-                console.error('Error al escuchar cambios:', error);
             });
         }
 
@@ -133,15 +141,31 @@
         }
 
         async function añadirPartido() {
-            if (!formData.fecha || !formData.hora || !formData.rival || !formData.ubicacion || !formData.jornada) {
+            const ubicacionFinal = mostrarUbicacionManual ? formData.ubicacionPersonalizada : formData.ubicacion;
+            
+            if (!formData.fecha || !formData.hora || !formData.rival || !ubicacionFinal || !formData.jornada) {
                 alert('Por favor completa todos los campos obligatorios');
                 return;
             }
+            
+            const dataToSave = {
+                fecha: formData.fecha,
+                hora: formData.hora,
+                rival: formData.rival,
+                logoRival: formData.logoRival,
+                esLocal: formData.esLocal,
+                ubicacion: ubicacionFinal,
+                jornada: formData.jornada,
+                finalizado: formData.finalizado,
+                resultadoLocal: formData.resultadoLocal,
+                resultadoVisitante: formData.resultadoVisitante,
+                enDirecto: formData.enDirecto
+            };
+            
             try {
-                await addDoc(collection(db, 'partidos'), formData);
+                await addDoc(collection(db, 'partidos'), dataToSave);
                 alert('Partido añadido correctamente');
                 resetForm();
-                // No necesitamos cargar partidos, onSnapshot lo hará automáticamente
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al añadir partido');
@@ -153,7 +177,6 @@
                 try {
                     await deleteDoc(doc(db, 'partidos', id));
                     alert('Partido eliminado');
-                    // No necesitamos cargar partidos, onSnapshot lo hará automáticamente
                 } catch (error) {
                     console.error('Error:', error);
                     alert('Error al eliminar partido');
@@ -163,13 +186,17 @@
 
         function editarPartido(partido) {
             editingPartido = partido;
+            const esUbicacionPredefinida = UBICACIONES.some(u => u.nombre === partido.ubicacion);
+            mostrarUbicacionManual = !esUbicacionPredefinida;
+            
             formData = {
                 fecha: partido.fecha || '',
                 hora: partido.hora || '',
                 rival: partido.rival || '',
                 logoRival: partido.logoRival || '',
                 esLocal: partido.esLocal !== undefined ? partido.esLocal : true,
-                ubicacion: partido.ubicacion || 'Pabellón Alberto Arnal (Manises)',
+                ubicacion: esUbicacionPredefinida ? partido.ubicacion : 'MANUAL',
+                ubicacionPersonalizada: esUbicacionPredefinida ? '' : partido.ubicacion,
                 jornada: partido.jornada || '',
                 finalizado: partido.finalizado || false,
                 resultadoLocal: partido.resultadoLocal || '',
@@ -180,16 +207,32 @@
         }
 
         async function actualizarPartido() {
-            if (!formData.fecha || !formData.hora || !formData.rival || !formData.ubicacion || !formData.jornada) {
+            const ubicacionFinal = mostrarUbicacionManual ? formData.ubicacionPersonalizada : formData.ubicacion;
+            
+            if (!formData.fecha || !formData.hora || !formData.rival || !ubicacionFinal || !formData.jornada) {
                 alert('Por favor completa todos los campos obligatorios');
                 return;
             }
+            
+            const dataToSave = {
+                fecha: formData.fecha,
+                hora: formData.hora,
+                rival: formData.rival,
+                logoRival: formData.logoRival,
+                esLocal: formData.esLocal,
+                ubicacion: ubicacionFinal,
+                jornada: formData.jornada,
+                finalizado: formData.finalizado,
+                resultadoLocal: formData.resultadoLocal,
+                resultadoVisitante: formData.resultadoVisitante,
+                enDirecto: formData.enDirecto
+            };
+            
             try {
-                await updateDoc(doc(db, 'partidos', editingPartido.id), formData);
+                await updateDoc(doc(db, 'partidos', editingPartido.id), dataToSave);
                 alert('Partido actualizado correctamente');
                 editingPartido = null;
                 resetForm();
-                // No necesitamos cargar partidos, onSnapshot lo hará automáticamente
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al actualizar partido');
@@ -208,7 +251,6 @@
                     [campo]: nuevoValor.toString(),
                     enDirecto: true
                 });
-                // No necesitamos cargar partidos, onSnapshot lo hará automáticamente en TODOS los dispositivos
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -222,12 +264,14 @@
                 logoRival: '',
                 esLocal: true,
                 ubicacion: 'Pabellón Alberto Arnal (Manises)',
+                ubicacionPersonalizada: '',
                 jornada: '',
                 finalizado: false,
                 resultadoLocal: '',
                 resultadoVisitante: '',
                 enDirecto: false
             };
+            mostrarUbicacionManual = false;
         }
 
         function handleInputChange(name, value) {
@@ -241,9 +285,14 @@
             }
 
             if (name === 'ubicacion') {
-                const ubicacionSeleccionada = UBICACIONES.find(u => u.nombre === value);
-                if (ubicacionSeleccionada) {
-                    formData.esLocal = ubicacionSeleccionada.esLocal;
+                if (value === 'MANUAL') {
+                    mostrarUbicacionManual = true;
+                } else {
+                    mostrarUbicacionManual = false;
+                    const ubicacionSeleccionada = UBICACIONES.find(u => u.nombre === value);
+                    if (ubicacionSeleccionada) {
+                        formData.esLocal = ubicacionSeleccionada.esLocal;
+                    }
                 }
             }
 
@@ -510,8 +559,49 @@
                                                     ${ubicacion.nombre} ${ubicacion.esLocal ? '🏠' : '✈️'}
                                                 </option>
                                             `).join('')}
+                                            <option value="MANUAL" ${formData.ubicacion === 'MANUAL' ? 'selected' : ''}>
+                                                ✏️ Otra ubicación (escribir manualmente)
+                                            </option>
                                         </select>
                                     </div>
+
+                                    ${mostrarUbicacionManual ? `
+                                        <div class="bg-blue-50 p-4 rounded-lg space-y-3">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">📍 Nombre del pabellón *</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ej: Pabellón El Vilar"
+                                                    value="${formData.ubicacionPersonalizada}"
+                                                    oninput="window.handleInputChangeGlobal('ubicacionPersonalizada', this.value)"
+                                                    class="w-full border p-2 rounded"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">🏠 Tipo de partido *</label>
+                                                <div class="flex gap-4">
+                                                    <label class="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                            type="radio"
+                                                            name="esLocal"
+                                                            ${formData.esLocal ? 'checked' : ''}
+                                                            onchange="window.handleInputChangeGlobal('esLocal', true)"
+                                                        />
+                                                        <span>🏠 Local (CBC juega en casa)</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                            type="radio"
+                                                            name="esLocal"
+                                                            ${!formData.esLocal ? 'checked' : ''}
+                                                            onchange="window.handleInputChangeGlobal('esLocal', false)"
+                                                        />
+                                                        <span>✈️ Visitante (CBC juega fuera)</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Jornada *</label>
@@ -671,7 +761,6 @@
             `;
         }
 
-        // Funciones globales
         window.handleAdminLoginGlobal = handleAdminLogin;
         window.handleInputChangeGlobal = handleInputChange;
         window.añadirPartidoGlobal = añadirPartido;
@@ -701,45 +790,25 @@
             renderizar();
         };
 
-        // Inicializar
         document.addEventListener('DOMContentLoaded', () => {
             cargarPartidos();
             iniciarRotacionFotos();
         });
         
-        // Rotación automática de fotos de fondo
         function iniciarRotacionFotos() {
             let fotoActual = 0;
             const totalFotos = 4;
             
             setInterval(() => {
-                // Quitar clase activa de todas
                 document.querySelectorAll('.fondo-foto').forEach(foto => {
                     foto.classList.remove('activa');
                 });
                 
-                // Siguiente foto
                 fotoActual = (fotoActual + 1) % totalFotos;
                 
-                // Añadir clase activa a la nueva foto
                 document.querySelectorAll('.fondo-foto')[fotoActual].classList.add('activa');
-            }, 6000); // Cambia cada 6 segundos
+            }, 6000);
         }
     </script>
-</head>
-<body>
-    <!-- Fotos rotativas de fondo -->
-    <div class="contenedor-fotos">
-        <div class="fondo-foto fondo-1 activa"></div>
-        <div class="fondo-foto fondo-2"></div>
-        <div class="fondo-foto fondo-3"></div>
-        <div class="fondo-foto fondo-4"></div>
-    </div>
-    
-    <!-- Capa naranja semitransparente -->
-    <div class="overlay-naranja"></div>
-    
-    <!-- Contenido principal de la web -->
-    <div id="app" class="contenido-web"></div>
 </body>
 </html>
