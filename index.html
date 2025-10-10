@@ -275,29 +275,42 @@
         }
 
         function handleInputChange(name, value) {
-            formData[name] = value;
+    formData[name] = value;
 
-            if (name === 'rival') {
-                const equipoSeleccionado = EQUIPOS_RIVALES.find(e => e.nombre === value);
-                if (equipoSeleccionado) {
-                    formData.logoRival = equipoSeleccionado.logo;
-                }
-            }
-
-            if (name === 'ubicacion') {
-                if (value === 'MANUAL') {
-                    mostrarUbicacionManual = true;
-                } else {
-                    mostrarUbicacionManual = false;
-                    const ubicacionSeleccionada = UBICACIONES.find(u => u.nombre === value);
-                    if (ubicacionSeleccionada) {
-                        formData.esLocal = ubicacionSeleccionada.esLocal;
-                    }
-                }
-            }
-
-            renderizar();
+    // Solo renderizar cuando cambian cosas que afectan la UI significativamente
+    const camposQueNecesitanRenderizar = ['rival', 'ubicacion', 'finalizado'];
+    
+    if (name === 'rival') {
+        const equipoSeleccionado = EQUIPOS_RIVALES.find(e => e.nombre === value);
+        if (equipoSeleccionado) {
+            formData.logoRival = equipoSeleccionado.logo;
         }
+        renderizar();
+        return;
+    }
+
+    if (name === 'ubicacion') {
+        if (value === 'MANUAL') {
+            mostrarUbicacionManual = true;
+        } else {
+            mostrarUbicacionManual = false;
+            const ubicacionSeleccionada = UBICACIONES.find(u => u.nombre === value);
+            if (ubicacionSeleccionada) {
+                formData.esLocal = ubicacionSeleccionada.esLocal;
+            }
+        }
+        renderizar();
+        return;
+    }
+
+    if (name === 'finalizado') {
+        renderizar();
+        return;
+    }
+
+    // Para fecha, hora, ubicacionPersonalizada, resultados: NO renderizar
+    // Solo actualizar el formData
+}
 
         async function handleAdminLogin() {
             const pass = prompt('Contraseña de administrador:');
