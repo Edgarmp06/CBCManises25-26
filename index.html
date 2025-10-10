@@ -312,26 +312,27 @@
     // Solo actualizar el formData
 }
 
-        async function handleAdminLogin() {
-            const pass = prompt('Contraseña de administrador:');
-            if (!pass) return;
+async function handleAdminLogin() {
+    const email = prompt('Email de administrador:');
+    if (!email) return;
+    
+    const password = prompt('Contraseña:');
+    if (!password) return;
 
-            const encoder = new TextEncoder();
-            const data = encoder.encode(pass);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-
-            const validHash = '43EB7F6D19D80FC4DC42280FB885E3111E1AE1F586A9188A49853280B9C04EF0';
-
-            if (hashHex === validHash) {
-                isAdmin = true;
-                alert('Acceso concedido');
-                renderizar();
-            } else {
-                alert('Contraseña incorrecta');
-            }
-        }
+    try {
+        const { getAuth, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+        const auth = getAuth(app);
+        
+        await signInWithEmailAndPassword(auth, email, password);
+        
+        isAdmin = true;
+        alert('Acceso concedido');
+        renderizar();
+    } catch (error) {
+        console.error('Error de login:', error);
+        alert('Email o contraseña incorrectos');
+    }
+}
 
         function generarPartidoCard(partido) {
             const equipoLocal = partido.esLocal ? 'CBC Manises-Quart' : partido.rival;
@@ -800,10 +801,18 @@
             showAdminPanel = !showAdminPanel;
             renderizar();
         };
-        window.logout = () => {
-            isAdmin = false;
-            showAdminPanel = false;
-            renderizar();
+        window.logout = async () => {
+    try {
+        const { getAuth, signOut } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+        const auth = getAuth(app);
+        await signOut(auth);
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+    }
+    
+    isAdmin = false;
+    showAdminPanel = false;
+    renderizar();
         };
         window.cambiarTab = (tab) => {
             activeTab = tab;
@@ -815,10 +824,25 @@
             renderizar();
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            cargarPartidos();
-            iniciarRotacionFotos();
+document.addEventListener('DOMContentLoaded', async () => {
+    cargarPartidos();
+    iniciarRotacionFotos();
+    
+    // Verificar si ya hay sesión de admin activa
+    try {
+        const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+        const auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                isAdmin = true;
+                renderizar();
+            }
         });
+    } catch (error) {
+        console.error('Error al verificar sesión:', error);
+    }
+});
         
         function iniciarRotacionFotos() {
             let fotoActual = 0;
