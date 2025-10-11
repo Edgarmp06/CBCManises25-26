@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cbc-manises.vercel.app/sitemap.xml
