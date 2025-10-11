@@ -94,6 +94,9 @@
     
     <div class="overlay-naranja"></div>
     
+    <!-- SEO: H1 oculto para Google -->
+    <h1 style="position: absolute; left: -9999px;">CBC Manises-Quart - Cadete Masculino Temporada 2025/26 - Calendario, Resultados y Partidos en Directo</h1>
+    
     <div id="app" class="contenido-web"></div>
 
     <script type="module">
@@ -303,64 +306,58 @@
         }
 
         function handleInputChange(name, value) {
-    formData[name] = value;
+            formData[name] = value;
 
-    // Solo renderizar cuando cambian cosas que afectan la UI significativamente
-    const camposQueNecesitanRenderizar = ['rival', 'ubicacion', 'finalizado'];
-    
-    if (name === 'rival') {
-        const equipoSeleccionado = EQUIPOS_RIVALES.find(e => e.nombre === value);
-        if (equipoSeleccionado) {
-            formData.logoRival = equipoSeleccionado.logo;
-        }
-        renderizar();
-        return;
-    }
+            if (name === 'rival') {
+                const equipoSeleccionado = EQUIPOS_RIVALES.find(e => e.nombre === value);
+                if (equipoSeleccionado) {
+                    formData.logoRival = equipoSeleccionado.logo;
+                }
+                renderizar();
+                return;
+            }
 
-    if (name === 'ubicacion') {
-        if (value === 'MANUAL') {
-            mostrarUbicacionManual = true;
-        } else {
-            mostrarUbicacionManual = false;
-            const ubicacionSeleccionada = UBICACIONES.find(u => u.nombre === value);
-            if (ubicacionSeleccionada) {
-                formData.esLocal = ubicacionSeleccionada.esLocal;
+            if (name === 'ubicacion') {
+                if (value === 'MANUAL') {
+                    mostrarUbicacionManual = true;
+                } else {
+                    mostrarUbicacionManual = false;
+                    const ubicacionSeleccionada = UBICACIONES.find(u => u.nombre === value);
+                    if (ubicacionSeleccionada) {
+                        formData.esLocal = ubicacionSeleccionada.esLocal;
+                    }
+                }
+                renderizar();
+                return;
+            }
+
+            if (name === 'finalizado') {
+                renderizar();
+                return;
             }
         }
-        renderizar();
-        return;
-    }
 
-    if (name === 'finalizado') {
-        renderizar();
-        return;
-    }
+        async function handleAdminLogin() {
+            const email = prompt('Email de administrador:');
+            if (!email) return;
+            
+            const password = prompt('Contraseña:');
+            if (!password) return;
 
-    // Para fecha, hora, ubicacionPersonalizada, resultados: NO renderizar
-    // Solo actualizar el formData
-}
-
-async function handleAdminLogin() {
-    const email = prompt('Email de administrador:');
-    if (!email) return;
-    
-    const password = prompt('Contraseña:');
-    if (!password) return;
-
-    try {
-        const { getAuth, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
-        const auth = getAuth(app);
-        
-        await signInWithEmailAndPassword(auth, email, password);
-        
-        isAdmin = true;
-        alert('Acceso concedido');
-        renderizar();
-    } catch (error) {
-        console.error('Error de login:', error);
-        alert('Email o contraseña incorrectos');
-    }
-}
+            try {
+                const { getAuth, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+                const auth = getAuth(app);
+                
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                isAdmin = true;
+                alert('Acceso concedido');
+                renderizar();
+            } catch (error) {
+                console.error('Error de login:', error);
+                alert('Email o contraseña incorrectos');
+            }
+        }
 
         function generarPartidoCard(partido) {
             const equipoLocal = partido.esLocal ? 'CBC Manises-Quart' : partido.rival;
@@ -383,7 +380,7 @@ async function handleAdminLogin() {
                             <div class="w-20 h-20 mx-auto mb-2 flex items-center justify-center">
                                 <img 
                                     src="${logoLocal}"
-                                    alt="${equipoLocal}"
+                                    alt="Logo ${equipoLocal}"
                                     class="max-w-full max-h-full object-contain"
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                                 />
@@ -422,7 +419,7 @@ async function handleAdminLogin() {
                             <div class="w-20 h-20 mx-auto mb-2 flex items-center justify-center">
                                 <img 
                                     src="${logoVisitante}"
-                                    alt="${equipoVisitante}"
+                                    alt="Logo ${equipoVisitante}"
                                     class="max-w-full max-h-full object-contain"
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                                 />
@@ -515,7 +512,7 @@ async function handleAdminLogin() {
                     <div class="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-6 shadow-lg">
                         <div class="max-w-4xl mx-auto flex justify-between items-center">
                             <div>
-                                <h1 class="text-3xl font-bold">🏀 CBC Manises-Quart</h1>
+                                <h2 class="text-3xl font-bold">🏀 CBC Manises-Quart</h2>
                                 <p class="text-orange-100">Cadete Masculino - Preferente Grupo D</p>
                                 <p class="text-sm text-orange-200">Temporada 2025/26 • 🔴 EN VIVO</p>
                             </div>
@@ -830,17 +827,17 @@ async function handleAdminLogin() {
             renderizar();
         };
         window.logout = async () => {
-    try {
-        const { getAuth, signOut } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
-        const auth = getAuth(app);
-        await signOut(auth);
-    } catch (error) {
-        console.error('Error al cerrar sesión:', error);
-    }
-    
-    isAdmin = false;
-    showAdminPanel = false;
-    renderizar();
+            try {
+                const { getAuth, signOut } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+                const auth = getAuth(app);
+                await signOut(auth);
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+            }
+            
+            isAdmin = false;
+            showAdminPanel = false;
+            renderizar();
         };
         window.cambiarTab = (tab) => {
             activeTab = tab;
@@ -852,25 +849,24 @@ async function handleAdminLogin() {
             renderizar();
         };
 
-document.addEventListener('DOMContentLoaded', async () => {
-    cargarPartidos();
-    iniciarRotacionFotos();
-    
-    // Verificar si ya hay sesión de admin activa
-    try {
-        const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
-        const auth = getAuth(app);
-        
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                isAdmin = true;
-                renderizar();
+        document.addEventListener('DOMContentLoaded', async () => {
+            cargarPartidos();
+            iniciarRotacionFotos();
+            
+            try {
+                const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+                const auth = getAuth(app);
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        isAdmin = true;
+                        renderizar();
+                    }
+                });
+            } catch (error) {
+                console.error('Error al verificar sesión:', error);
             }
         });
-    } catch (error) {
-        console.error('Error al verificar sesión:', error);
-    }
-});
         
         function iniciarRotacionFotos() {
             let fotoActual = 0;
