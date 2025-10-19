@@ -959,17 +959,7 @@
         `;
     }).join('')}
 </select>
-                            <option value="">-- Selecciona un partido finalizado --</option>
-                            ${partidosFinalizados.map(p => {
-                                const yaTieneActa = actas.some(a => a.partidoId === p.id);
-                                return `
-                                    <option value="${p.id}" ${yaTieneActa ? 'disabled' : ''}>
-                                        Jornada ${p.jornada} - ${p.rival} (${new Date(p.fecha + 'T00:00:00').toLocaleDateString('es-ES')}) ${yaTieneActa ? '- ✅ Ya tiene acta' : ''}
-                                    </option>
-                                `;
-                            }).join('')}
-                        </select>
-                    </div>
+        
 
                     ${actaFormData.partidoId ? `
                         <div class="border-t pt-6">
@@ -1600,4 +1590,5 @@
 </body>
 
 </html>
+
 
