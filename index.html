@@ -518,89 +518,130 @@
         return Math.round((anotados / intentos) * 100);
     }
 
-    async function guardarActa() {
-        if (!actaFormData.partidoId) {
-            alert('Selecciona un partido');
+async function guardarActa() {
+    console.log('=== INICIANDO GUARDADO DE ACTA ===');
+    console.log('Partido ID:', actaFormData.partidoId);
+    console.log('Número de jugadores:', actaFormData.jugadores.length);
+    
+    if (!actaFormData.partidoId) {
+        alert('❌ Error: Selecciona un partido');
+        return;
+    }
+
+    if (actaFormData.jugadores.length === 0) {
+        alert('❌ Error: Añade al menos un jugador');
+        return;
+    }
+
+    const partido = partidos.find(p => p.id === actaFormData.partidoId);
+    if (!partido) {
+        alert('❌ Error: Partido no encontrado');
+        return;
+    }
+
+    // Validar datos de jugadores
+    for (let i = 0; i < actaFormData.jugadores.length; i++) {
+        const j = actaFormData.jugadores[i];
+        
+        console.log(`Validando jugador ${i + 1}:`, j);
+        
+        if (!j.dorsal || j.dorsal.trim() === '') {
+            alert(`❌ Jugador ${i + 1}: El dorsal es obligatorio`);
             return;
         }
-
-        if (actaFormData.jugadores.length === 0) {
-            alert('Añade al menos un jugador');
+        
+        if (!j.nombre || j.nombre.trim() === '') {
+            alert(`❌ Jugador ${i + 1}: El nombre es obligatorio`);
             return;
         }
-
-        const partido = partidos.find(p => p.id === actaFormData.partidoId);
-        if (!partido) {
-            alert('Partido no encontrado');
+        
+        const t2_an = parseInt(j.t2_anotados) || 0;
+        const t2_int = parseInt(j.t2_intentos) || 0;
+        const t3_an = parseInt(j.t3_anotados) || 0;
+        const t3_int = parseInt(j.t3_intentos) || 0;
+        const tl_an = parseInt(j.tl_anotados) || 0;
+        const tl_int = parseInt(j.tl_intentos) || 0;
+        
+        if (t2_an > t2_int) {
+            alert(`❌ Jugador ${i + 1}: T2 anotados (${t2_an}) no puede ser mayor que intentos (${t2_int})`);
             return;
         }
-
-        // Validar datos de jugadores
-        for (let i = 0; i < actaFormData.jugadores.length; i++) {
-            const j = actaFormData.jugadores[i];
-            if (!j.dorsal || !j.nombre) {
-                alert(`Jugador ${i + 1}: Completa dorsal y nombre`);
-                return;
-            }
-            const t2_an = parseInt(j.t2_anotados) || 0;
-            const t2_int = parseInt(j.t2_intentos) || 0;
-            const t3_an = parseInt(j.t3_anotados) || 0;
-            const t3_int = parseInt(j.t3_intentos) || 0;
-            const tl_an = parseInt(j.tl_anotados) || 0;
-            const tl_int = parseInt(j.tl_intentos) || 0;
-            
-            if (t2_an > t2_int || t3_an > t3_int || tl_an > tl_int) {
-                alert(`Jugador ${i + 1}: Los tiros anotados no pueden ser mayores que los intentos`);
-                return;
-            }
+        
+        if (t3_an > t3_int) {
+            alert(`❌ Jugador ${i + 1}: T3 anotados (${t3_an}) no puede ser mayor que intentos (${t3_int})`);
+            return;
         }
-
-        const jugadoresProcesados = actaFormData.jugadores.map(j => ({
-            dorsal: j.dorsal,
-            nombre: j.nombre,
-            pts: parseInt(j.pts) || 0,
-            min: parseInt(j.min) || 0,
-            tl: {
-                anotados: parseInt(j.tl_anotados) || 0,
-                intentos: parseInt(j.tl_intentos) || 0,
-                porcentaje: calcularPorcentajeTL(parseInt(j.tl_anotados) || 0, parseInt(j.tl_intentos) || 0)
-            },
-            t2: {
-                anotados: parseInt(j.t2_anotados) || 0,
-                intentos: parseInt(j.t2_intentos) || 0
-            },
-            t3: {
-                anotados: parseInt(j.t3_anotados) || 0,
-                intentos: parseInt(j.t3_intentos) || 0
-            },
-            fc: parseInt(j.fc) || 0
-        }));
-
-        const actaData = {
-            partidoId: actaFormData.partidoId,
-            fecha: partido.fecha,
-            rival: partido.rival,
-            logoRival: partido.logoRival,
-            esLocal: partido.esLocal,
-            ubicacion: partido.ubicacion,
-            resultadoLocal: partido.resultadoLocal,
-            resultadoVisitante: partido.resultadoVisitante,
-            jornada: partido.jornada,
-            jugadores: jugadoresProcesados
-        };
-
-        try {
-            await addDoc(collection(db, 'actas'), actaData);
-            alert('Acta guardada correctamente');
-            creandoActa = false;
-            modoAdmin = 'partidos';
-            actaFormData = { partidoId: '', jugadores: [] };
-            renderizar();
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al guardar acta');
+        
+        if (tl_an > tl_int) {
+            alert(`❌ Jugador ${i + 1}: TL anotados (${tl_an}) no puede ser mayor que intentos (${tl_int})`);
+            return;
         }
     }
+
+    console.log('✅ Validación completada. Procesando jugadores...');
+
+    const jugadoresProcesados = actaFormData.jugadores.map(j => ({
+        dorsal: j.dorsal.trim(),
+        nombre: j.nombre.trim().toUpperCase(),
+        pts: parseInt(j.pts) || 0,
+        min: parseInt(j.min) || 0,
+        tl: {
+            anotados: parseInt(j.tl_anotados) || 0,
+            intentos: parseInt(j.tl_intentos) || 0,
+            porcentaje: calcularPorcentajeTL(parseInt(j.tl_anotados) || 0, parseInt(j.tl_intentos) || 0)
+        },
+        t2: {
+            anotados: parseInt(j.t2_anotados) || 0,
+            intentos: parseInt(j.t2_intentos) || 0
+        },
+        t3: {
+            anotados: parseInt(j.t3_anotados) || 0,
+            intentos: parseInt(j.t3_intentos) || 0
+        },
+        fc: parseInt(j.fc) || 0
+    }));
+
+    console.log('Jugadores procesados:', jugadoresProcesados);
+
+    const actaData = {
+        partidoId: actaFormData.partidoId,
+        fecha: partido.fecha,
+        rival: partido.rival,
+        logoRival: partido.logoRival,
+        esLocal: partido.esLocal,
+        ubicacion: partido.ubicacion,
+        resultadoLocal: partido.resultadoLocal,
+        resultadoVisitante: partido.resultadoVisitante,
+        jornada: partido.jornada,
+        jugadores: jugadoresProcesados
+    };
+
+    console.log('Datos del acta a guardar:', actaData);
+
+    try {
+        console.log('Guardando en Firebase...');
+        await addDoc(collection(db, 'actas'), actaData);
+        console.log('✅ Acta guardada exitosamente');
+        alert('✅ Acta guardada correctamente');
+        creandoActa = false;
+        modoAdmin = 'partidos';
+        actaFormData = { partidoId: '', jugadores: [] };
+        renderizar();
+    } catch (error) {
+        console.error('❌ Error al guardar:', error);
+        alert('❌ Error al guardar acta: ' + error.message);
+    }
+}
+```
+
+---
+
+## 🎯 **QUÉ HACE ESTA VERSIÓN:**
+```
+✅ Te dice EXACTAMENTE qué campo falta
+✅ Valida que dorsal y nombre no estén vacíos
+✅ Muestra logs en la consola para debug
+✅ Te dice el error específico de Firebase si hay
 
     function verActa(partidoId) {
         const acta = actas.find(a => a.partidoId === partidoId);
@@ -1590,5 +1631,6 @@
 </body>
 
 </html>
+
 
 
