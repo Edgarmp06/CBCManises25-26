@@ -632,16 +632,6 @@ async function guardarActa() {
         alert('❌ Error al guardar acta: ' + error.message);
     }
 }
-```
-
----
-
-## 🎯 **QUÉ HACE ESTA VERSIÓN:**
-```
-✅ Te dice EXACTAMENTE qué campo falta
-✅ Valida que dorsal y nombre no estén vacíos
-✅ Muestra logs en la consola para debug
-✅ Te dice el error específico de Firebase si hay
 
     function verActa(partidoId) {
         const acta = actas.find(a => a.partidoId === partidoId);
@@ -1631,6 +1621,7 @@ async function guardarActa() {
 </body>
 
 </html>
+
 
 
 
