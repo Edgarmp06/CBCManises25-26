@@ -946,10 +946,19 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona el partido *</label>
                         <select
-                            value="${actaFormData.partidoId}"
-                            onchange="window.seleccionarPartidoActaGlobal(this.value)"
-                            class="w-full border p-3 rounded-lg"
-                        >
+    onchange="window.seleccionarPartidoActaGlobal(this.value)"
+    class="w-full border p-3 rounded-lg"
+>
+    <option value="" ${actaFormData.partidoId === '' ? 'selected' : ''}>-- Selecciona un partido finalizado --</option>
+    ${partidosFinalizados.map(p => {
+        const yaTieneActa = actas.some(a => a.partidoId === p.id);
+        return `
+            <option value="${p.id}" ${actaFormData.partidoId === p.id ? 'selected' : ''} ${yaTieneActa ? 'disabled' : ''}>
+                Jornada ${p.jornada} - ${p.rival} (${new Date(p.fecha + 'T00:00:00').toLocaleDateString('es-ES')}) ${yaTieneActa ? '- ✅ Ya tiene acta' : ''}
+            </option>
+        `;
+    }).join('')}
+</select>
                             <option value="">-- Selecciona un partido finalizado --</option>
                             ${partidosFinalizados.map(p => {
                                 const yaTieneActa = actas.some(a => a.partidoId === p.id);
@@ -1591,3 +1600,4 @@
 </body>
 
 </html>
+
