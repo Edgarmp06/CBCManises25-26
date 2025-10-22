@@ -84,6 +84,103 @@
         z-index: 2;
     }
 
+    /* Banner WhatsApp */
+    .whatsapp-banner {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: linear-gradient(135deg, #FF6B35 0%, #E85A2A 100%);
+        padding: 12px 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        animation: slideDown 0.5s ease-out;
+    }
+
+    .whatsapp-banner.hidden {
+        display: none;
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .whatsapp-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .whatsapp-text {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .whatsapp-icon {
+        font-size: 1.5rem;
+    }
+
+    .whatsapp-button {
+        background: white;
+        color: #FF6B35;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        white-space: nowrap;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .whatsapp-button:hover {
+        background: #FFF5F0;
+        transform: scale(1.05);
+    }
+
+    .close-banner {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 4px 8px;
+        line-height: 1;
+        opacity: 0.8;
+        transition: opacity 0.3s;
+    }
+
+    .close-banner:hover {
+        opacity: 1;
+    }
+
+    @media (max-width: 640px) {
+        .whatsapp-text {
+            font-size: 0.85rem;
+        }
+        
+        .whatsapp-button {
+            padding: 6px 14px;
+            font-size: 0.8rem;
+        }
+
+        .whatsapp-icon {
+            font-size: 1.2rem;
+        }
+    }
+
     /* Estilos para Actas */
     .jugador-card {
         background: white;
@@ -1621,6 +1718,7 @@ async function guardarActa() {
 </body>
 
 </html>
+
 
 
 
