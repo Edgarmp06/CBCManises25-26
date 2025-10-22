@@ -261,20 +261,56 @@
     }
 </style>
 </head>
-<body>
+    <body>
+    <!-- Banner WhatsApp (NUEVO) -->
+    <div class="whatsapp-banner" id="whatsappBanner">
+        <div class="whatsapp-content">
+            <div class="whatsapp-text">
+                <span class="whatsapp-icon">📢</span>
+                <span>Únete al canal de WhatsApp para recibir avisos de partidos</span>
+            </div>
+            <a 
+                href="https://whatsapp.com/channel/0029VbBc5Eh4SpkD0kfaV93T" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="whatsapp-button"
+            >
+                Unirse al canal
+            </a>
+            <button class="close-banner" onclick="cerrarBanner()" aria-label="Cerrar banner">×</button>
+        </div>
+    </div>
+
     <div class="contenedor-fotos">
         <div class="fondo-foto fondo-1 activa"></div>
         <div class="fondo-foto fondo-2"></div>
         <div class="fondo-foto fondo-3"></div>
         <div class="fondo-foto fondo-4"></div>
     </div>
-<div class="overlay-naranja"></div>
+    
+    <div class="overlay-naranja"></div>
 
-<!-- SEO: H1 oculto para Google -->
-<h1 style="position: absolute; left: -9999px;">CBC Manises-Quart - Cadete Masculino Temporada 2025/26 - Calendario, Resultados y Partidos en Directo</h1>
+    <!-- SEO: H1 oculto para Google -->
+    <h1 style="position: absolute; left: -9999px;">CBC Manises-Quart - Cadete Masculino Temporada 2025/26 - Calendario, Resultados y Partidos en Directo</h1>
 
-<div id="app" class="contenido-web"></div>
+    <div id="app" class="contenido-web"></div>
 
+    <script>
+        // Función para cerrar el banner
+        function cerrarBanner() {
+            const banner = document.getElementById('whatsappBanner');
+            banner.classList.add('hidden');
+            // Guardar en localStorage que el usuario cerró el banner
+            localStorage.setItem('whatsappBannerClosed', 'true');
+        }
+
+        // Comprobar si el usuario ya cerró el banner
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('whatsappBannerClosed') === 'true') {
+                document.getElementById('whatsappBanner').classList.add('hidden');
+            }
+        });
+    </script>
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
     import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
@@ -1718,6 +1754,7 @@ async function guardarActa() {
 </body>
 
 </html>
+
 
 
 
