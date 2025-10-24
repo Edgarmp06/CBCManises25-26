@@ -35,7 +35,7 @@ Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 
 - **Visitantes**: +150 visitantes únicos
 - **Páginas vistas**: +400
 - **Rendimiento**: 96/100 desktop, 95/100 mobile
-- **Seguidores del canal**: 9 personas
+- **Seguidores del canal**: 10 personas
 - **Test de carga**: ✅ Soporta 10,000 usuarios simultáneos
 
 ## 🔗 Enlaces
