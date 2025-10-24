@@ -110,7 +110,7 @@ Desarrollado por **Edgar MP** para el CBC Manises.
 
 ## 📄 Licencia
 
-Este proyecto es privado y pertenece al CBC Manises-Quart.
+Este proyecto es privado y pertenece a Edgar MP.
 
 ---
 
