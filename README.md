@@ -13,7 +13,7 @@ Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 
 - ⚡ **Rendimiento excelente** - 94-96/100 en PageSpeed Insights
 - 💬 **Canal de WhatsApp** - Botón directo para unirse al canal oficial
 - 🔐 **Panel de administración** - Gestión completa de partidos y actas
-- 🎨 **Galería de fotos** - Fondo rotativo con imágenes (futaramente del equipo)
+- 🎨 **Galería de fotos** - Fondo rotativo con imágenes (futuramente del equipo)
 
 ### 🚀 Próximas mejoras (a implementar después del 27 de octubre)
 1. Estadísticas acumuladas de la temporada
