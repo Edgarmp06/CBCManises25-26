@@ -1320,14 +1320,6 @@ async function guardarActa() {
             </div>
         `;
 
-        // Programar la creación de gráficas después de que el HTML se renderice
-        setTimeout(() => {
-            crearGraficaEvolucionPuntos();
-            crearGraficaPuntosPorJornada();
-            crearGraficaTop5Anotadores();
-            llenarTablaEstadisticas();
-        }, 100);
-
         return html;
     }
 
@@ -1880,6 +1872,16 @@ async function guardarActa() {
                 </div>
             </div>
         `;
+
+        // Crear gráficas después de que el DOM se actualice
+        if (activeTab === 'estadisticas') {
+            setTimeout(() => {
+                crearGraficaEvolucionPuntos();
+                crearGraficaPuntosPorJornada();
+                crearGraficaTop5Anotadores();
+                llenarTablaEstadisticas();
+            }, 100);
+        }
     }
 
     // Exponer funciones globales
