@@ -30,9 +30,6 @@
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 <!-- Vercel Analytics -->
 <script defer src="/_vercel/insights/script.js"></script>
 <!-- Vercel Speed Insights -->
@@ -1198,305 +1195,6 @@ async function guardarActa() {
         `;
     }
 
-    // FUNCIONES DE ESTADÍSTICAS
-    function procesarDatosEstadisticas() {
-        // Objeto para acumular estadísticas por jugador
-        const estadisticasJugadores = {};
-
-        // Procesar todas las actas
-        actas.forEach(acta => {
-            acta.jugadores.forEach(jugador => {
-                // Usar dorsal como clave única para identificar al jugador
-                const clave = jugador.dorsal;
-
-                if (!estadisticasJugadores[clave]) {
-                    estadisticasJugadores[clave] = {
-                        nombre: jugador.nombre,
-                        dorsal: jugador.dorsal,
-                        partidos: 0,
-                        puntosTotal: 0,
-                        minTotal: 0,
-                        tlAnotados: 0,
-                        tlIntentos: 0,
-                        faltasTotal: 0,
-                        puntosPorJornada: {}
-                    };
-                } else {
-                    // Actualizar el nombre si cambió (mantiene el más reciente)
-                    estadisticasJugadores[clave].nombre = jugador.nombre;
-                }
-
-                estadisticasJugadores[clave].partidos++;
-                estadisticasJugadores[clave].puntosTotal += jugador.pts || 0;
-                estadisticasJugadores[clave].minTotal += jugador.min || 0;
-                estadisticasJugadores[clave].tlAnotados += jugador.tl.anotados || 0;
-                estadisticasJugadores[clave].tlIntentos += jugador.tl.intentos || 0;
-                estadisticasJugadores[clave].faltasTotal += jugador.fc || 0;
-                estadisticasJugadores[clave].puntosPorJornada[acta.jornada] = jugador.pts || 0;
-            });
-        });
-
-        return estadisticasJugadores;
-    }
-
-    function obtenerTop5Anotadores() {
-        const stats = procesarDatosEstadisticas();
-        return Object.values(stats)
-            .sort((a, b) => b.puntosTotal - a.puntosTotal)
-            .slice(0, 5);
-    }
-
-    function obtenerPuntosPorJornada() {
-        const puntosPorJornada = {};
-
-        actas.forEach(acta => {
-            if (!puntosPorJornada[acta.jornada]) {
-                puntosPorJornada[acta.jornada] = 0;
-            }
-
-            acta.jugadores.forEach(jugador => {
-                puntosPorJornada[acta.jornada] += jugador.pts || 0;
-            });
-        });
-
-        return puntosPorJornada;
-    }
-
-    function generarVistaEstadisticas() {
-        if (actas.length === 0) {
-            return `
-                <div class="text-center py-12">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">📊 Estadísticas</h2>
-                    <p class="text-gray-500">No hay estadísticas disponibles todavía. Las actas de partidos finalizados aparecerán aquí.</p>
-                </div>
-            `;
-        }
-
-        const html = `
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Estadísticas de la Temporada</h2>
-
-                <!-- Gráfica 1: Evolución de puntos por jugador (Top 5) -->
-                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">📈 Evolución de Puntos por Jornada - Top 5 Anotadores</h3>
-                    <div class="relative" style="height: 300px;">
-                        <canvas id="chartEvolucionPuntos"></canvas>
-                    </div>
-                </div>
-
-                <!-- Gráfica 2: Puntos totales del equipo por jornada -->
-                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">📊 Puntos Totales del Equipo por Jornada</h3>
-                    <div class="relative" style="height: 300px;">
-                        <canvas id="chartPuntosPorJornada"></canvas>
-                    </div>
-                </div>
-
-                <!-- Gráfica 3: Top 5 anotadores de la temporada -->
-                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">🏆 Top 5 Anotadores de la Temporada</h3>
-                    <div class="relative" style="height: 300px;">
-                        <canvas id="chartTop5Anotadores"></canvas>
-                    </div>
-                </div>
-
-                <!-- Tabla 4: Estadísticas acumuladas de todos los jugadores -->
-                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">📋 Estadísticas Acumuladas de Jugadores</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-orange-600 text-white">
-                                <tr>
-                                    <th class="px-4 py-3 text-left">#</th>
-                                    <th class="px-4 py-3 text-left">Jugador</th>
-                                    <th class="px-4 py-3 text-center">PJ</th>
-                                    <th class="px-4 py-3 text-center">PTS</th>
-                                    <th class="px-4 py-3 text-center">MIN</th>
-                                    <th class="px-4 py-3 text-center">TL%</th>
-                                    <th class="px-4 py-3 text-center">FC</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaEstadisticas" class="divide-y divide-gray-200">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        return html;
-    }
-
-    function crearGraficaEvolucionPuntos() {
-        const canvas = document.getElementById('chartEvolucionPuntos');
-        if (!canvas) return;
-
-        const top5 = obtenerTop5Anotadores();
-        const jornadas = Array.from(new Set(actas.map(a => a.jornada))).sort((a, b) => a - b);
-
-        const coloresJugadores = [
-            '#FF6B35',
-            '#E85A2A',
-            '#FFA500',
-            '#FF8C42',
-            '#FFAA5C'
-        ];
-
-        const datasets = top5.map((jugador, index) => {
-            return {
-                label: jugador.nombre,
-                data: jornadas.map(jornada => jugador.puntosPorJornada[jornada] || 0),
-                borderColor: coloresJugadores[index],
-                backgroundColor: coloresJugadores[index] + '33',
-                tension: 0.3,
-                fill: false,
-                borderWidth: 2
-            };
-        });
-
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: jornadas.map(j => 'J' + j),
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 2
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function crearGraficaPuntosPorJornada() {
-        const canvas = document.getElementById('chartPuntosPorJornada');
-        if (!canvas) return;
-
-        const puntosPorJornada = obtenerPuntosPorJornada();
-        const jornadas = Object.keys(puntosPorJornada).sort((a, b) => a - b);
-        const puntos = jornadas.map(j => puntosPorJornada[j]);
-
-        new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: jornadas.map(j => 'Jornada ' + j),
-                datasets: [{
-                    label: 'Puntos del Equipo',
-                    data: puntos,
-                    backgroundColor: '#FF6B35',
-                    borderColor: '#E85A2A',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 10
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function crearGraficaTop5Anotadores() {
-        const canvas = document.getElementById('chartTop5Anotadores');
-        if (!canvas) return;
-
-        const top5 = obtenerTop5Anotadores();
-        const nombres = top5.map(j => j.nombre);
-        const puntos = top5.map(j => j.puntosTotal);
-
-        new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: nombres,
-                datasets: [{
-                    label: 'Puntos Totales',
-                    data: puntos,
-                    backgroundColor: [
-                        '#FF6B35',
-                        '#E85A2A',
-                        '#FFA500',
-                        '#FF8C42',
-                        '#FFAA5C'
-                    ],
-                    borderColor: [
-                        '#E85A2A',
-                        '#D74A1A',
-                        '#E89500',
-                        '#E87C32',
-                        '#E89A4C'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 5
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function llenarTablaEstadisticas() {
-        const tbody = document.getElementById('tablaEstadisticas');
-        if (!tbody) return;
-
-        const stats = procesarDatosEstadisticas();
-        const jugadores = Object.values(stats).sort((a, b) => b.puntosTotal - a.puntosTotal);
-
-        tbody.innerHTML = jugadores.map((jugador, index) => {
-            const tlPorcentaje = jugador.tlIntentos > 0
-                ? Math.round((jugador.tlAnotados / jugador.tlIntentos) * 100)
-                : 0;
-
-            return '<tr class="' + (index % 2 === 0 ? 'bg-gray-50' : 'bg-white') + ' hover:bg-orange-50">' +
-                '<td class="px-4 py-3 font-bold text-orange-600">' + jugador.dorsal + '</td>' +
-                '<td class="px-4 py-3 font-semibold text-gray-800">' + jugador.nombre + '</td>' +
-                '<td class="px-4 py-3 text-center">' + jugador.partidos + '</td>' +
-                '<td class="px-4 py-3 text-center font-bold text-orange-600">' + jugador.puntosTotal + '</td>' +
-                '<td class="px-4 py-3 text-center">' + jugador.minTotal + '</td>' +
-                '<td class="px-4 py-3 text-center">' + tlPorcentaje + '%</td>' +
-                '<td class="px-4 py-3 text-center">' + jugador.faltasTotal + '</td>' +
-            '</tr>';
-        }).join('');
-    }
-
     function generarPanelAdmin() {
         if (creandoActa) {
             return generarFormularioActa();
@@ -1832,16 +1530,6 @@ async function guardarActa() {
                             >
                                 🏆 Resultados
                             </button>
-                            <button
-                                onclick="window.cambiarTab('estadisticas')"
-                                class="flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
-                                    activeTab === 'estadisticas'
-                                        ? 'bg-orange-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }"
-                            >
-                                📊 Estadísticas
-                            </button>
                         </div>
 
                         <div>
@@ -1852,14 +1540,14 @@ async function guardarActa() {
                                         <p class="text-gray-500 text-center py-8">No hay partidos programados</p>
                                     ` : partidosCalendario.map(p => generarPartidoCard(p)).join('')}
                                 </div>
-                            ` : activeTab === 'resultados' ? `
+                            ` : `
                                 <div>
                                     <h2 class="text-2xl font-bold text-gray-800 mb-4">🏆 Resultados</h2>
                                     ${partidosFinalizados.length === 0 ? `
                                         <p class="text-gray-500 text-center py-8">No hay resultados todavía</p>
                                     ` : partidosFinalizados.map(p => generarPartidoCard(p)).join('')}
                                 </div>
-                            ` : activeTab === 'estadisticas' ? generarVistaEstadisticas() : ''}
+                            `}
                         </div>
                     `}
 
@@ -1876,16 +1564,6 @@ async function guardarActa() {
                 </div>
             </div>
         `;
-
-        // Crear gráficas después de que el DOM se actualice
-        if (activeTab === 'estadisticas') {
-            setTimeout(() => {
-                crearGraficaEvolucionPuntos();
-                crearGraficaPuntosPorJornada();
-                crearGraficaTop5Anotadores();
-                llenarTablaEstadisticas();
-            }, 100);
-        }
     }
 
     // Exponer funciones globales
@@ -1983,5 +1661,7 @@ async function guardarActa() {
 </body>
 
 </html>
+
+
 
 
