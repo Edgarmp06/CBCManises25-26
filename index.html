@@ -1206,11 +1206,12 @@ async function guardarActa() {
         // Procesar todas las actas
         actas.forEach(acta => {
             acta.jugadores.forEach(jugador => {
-                const nombre = jugador.nombre;
+                // Usar dorsal como clave única para identificar al jugador
+                const clave = jugador.dorsal;
 
-                if (!estadisticasJugadores[nombre]) {
-                    estadisticasJugadores[nombre] = {
-                        nombre: nombre,
+                if (!estadisticasJugadores[clave]) {
+                    estadisticasJugadores[clave] = {
+                        nombre: jugador.nombre,
                         dorsal: jugador.dorsal,
                         partidos: 0,
                         puntosTotal: 0,
@@ -1220,15 +1221,18 @@ async function guardarActa() {
                         faltasTotal: 0,
                         puntosPorJornada: {}
                     };
+                } else {
+                    // Actualizar el nombre si cambió (mantiene el más reciente)
+                    estadisticasJugadores[clave].nombre = jugador.nombre;
                 }
 
-                estadisticasJugadores[nombre].partidos++;
-                estadisticasJugadores[nombre].puntosTotal += jugador.pts || 0;
-                estadisticasJugadores[nombre].minTotal += jugador.min || 0;
-                estadisticasJugadores[nombre].tlAnotados += jugador.tl.anotados || 0;
-                estadisticasJugadores[nombre].tlIntentos += jugador.tl.intentos || 0;
-                estadisticasJugadores[nombre].faltasTotal += jugador.fc || 0;
-                estadisticasJugadores[nombre].puntosPorJornada[acta.jornada] = jugador.pts || 0;
+                estadisticasJugadores[clave].partidos++;
+                estadisticasJugadores[clave].puntosTotal += jugador.pts || 0;
+                estadisticasJugadores[clave].minTotal += jugador.min || 0;
+                estadisticasJugadores[clave].tlAnotados += jugador.tl.anotados || 0;
+                estadisticasJugadores[clave].tlIntentos += jugador.tl.intentos || 0;
+                estadisticasJugadores[clave].faltasTotal += jugador.fc || 0;
+                estadisticasJugadores[clave].puntosPorJornada[acta.jornada] = jugador.pts || 0;
             });
         });
 
@@ -1979,6 +1983,5 @@ async function guardarActa() {
 </body>
 
 </html>
-
 
 
