@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -29,6 +30,9 @@
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Chart.js para gráficas -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <!-- Vercel Analytics -->
 <script defer src="/_vercel/insights/script.js"></script>
@@ -191,6 +195,20 @@
             grid-template-columns: repeat(2, 1fr);
         }
     }
+
+    /* Estilos para gráficas */
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 640px) {
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
 </style>
 </head>
 <body>
@@ -252,6 +270,8 @@
     let viendoActa = null;
     let creandoActa = false;
     let modoAdmin = 'partidos';
+    let jugadorSeleccionado = '';
+    let datosJugadores = {};
 
     let formData = {
         fecha: '',
@@ -294,8 +314,377 @@
                 id: doc.id,
                 ...doc.data()
             }));
+            procesarDatosJugadores();
             renderizar();
         });
+    }
+
+    // FUNCIONES DE ESTADÍSTICAS Y GRÁFICAS
+    function procesarDatosJugadores() {
+        datosJugadores = {};
+        
+        actas.forEach(acta => {
+            if (!acta.jugadores || !Array.isArray(acta.jugadores)) {
+                console.warn('⚠️ Acta sin jugadores:', acta);
+                return;
+            }
+            
+            acta.jugadores.forEach(jugador => {
+                if (!datosJugadores[jugador.nombre]) {
+                    datosJugadores[jugador.nombre] = {
+                        nombre: jugador.nombre,
+                        dorsal: jugador.dorsal,
+                        partidos: [],
+                        totalPts: 0,
+                        totalMin: 0,
+                        totalTL_an: 0,
+                        totalTL_int: 0,
+                        totalT2_an: 0,
+                        totalT2_int: 0,
+                        totalT3_an: 0,
+                        totalT3_int: 0,
+                        totalFC: 0
+                    };
+                }
+                
+                datosJugadores[jugador.nombre].partidos.push({
+                    jornada: acta.jornada,
+                    pts: jugador.pts,
+                    min: jugador.min,
+                    tl_an: jugador.tl.anotados,
+                    tl_int: jugador.tl.intentos,
+                    t2_an: jugador.t2.anotados,
+                    t2_int: jugador.t2.intentos,
+                    t3_an: jugador.t3.anotados,
+                    t3_int: jugador.t3.intentos,
+                    fc: jugador.fc
+                });
+                
+                datosJugadores[jugador.nombre].totalPts += jugador.pts;
+                datosJugadores[jugador.nombre].totalMin += jugador.min;
+                datosJugadores[jugador.nombre].totalTL_an += jugador.tl.anotados;
+                datosJugadores[jugador.nombre].totalTL_int += jugador.tl.intentos;
+                datosJugadores[jugador.nombre].totalT2_an += jugador.t2.anotados;
+                datosJugadores[jugador.nombre].totalT2_int += jugador.t2.intentos;
+                datosJugadores[jugador.nombre].totalT3_an += jugador.t3.anotados;
+                datosJugadores[jugador.nombre].totalT3_int += jugador.t3.intentos;
+                datosJugadores[jugador.nombre].totalFC += jugador.fc;
+            });
+        });
+    }
+
+    function cambiarJugador(nombre) {
+        jugadorSeleccionado = nombre;
+        renderizar();
+        if (nombre) {
+            setTimeout(() => crearGraficasJugador(nombre), 100);
+        }
+    }
+
+    function crearGraficasEquipo() {
+        if (actas.length === 0) return;
+
+        // Filtrar solo actas válidas con jugadores
+        const actasValidas = actas.filter(a => a.jugadores && Array.isArray(a.jugadores) && a.jugadores.length > 0);
+        
+        if (actasValidas.length === 0) {
+            console.warn('⚠️ No hay actas válidas con jugadores');
+            return;
+        }
+
+        const actasOrdenadas = [...actasValidas].sort((a, b) => parseInt(a.jornada) - parseInt(b.jornada));
+        
+        const jornadas = actasOrdenadas.map(a => `J${a.jornada}`);
+        const puntosEquipo = actasOrdenadas.map(a => 
+            a.jugadores.reduce((sum, j) => sum + (j.pts || 0), 0)
+        );
+        const faltasEquipo = actasOrdenadas.map(a =>
+            a.jugadores.reduce((sum, j) => sum + (j.fc || 0), 0)
+        );
+        const t2_anotados = actasOrdenadas.map(a =>
+            a.jugadores.reduce((sum, j) => sum + (j.t2?.anotados || 0), 0)
+        );
+        const t3_anotados = actasOrdenadas.map(a =>
+            a.jugadores.reduce((sum, j) => sum + (j.t3?.anotados || 0), 0)
+        );
+        const tl_anotados = actasOrdenadas.map(a =>
+            a.jugadores.reduce((sum, j) => sum + (j.tl?.anotados || 0), 0)
+        );
+        const porcentajesTL = actasOrdenadas.map(a => {
+            const totalAn = a.jugadores.reduce((sum, j) => sum + j.tl.anotados, 0);
+            const totalInt = a.jugadores.reduce((sum, j) => sum + j.tl.intentos, 0);
+            return totalInt > 0 ? Math.round((totalAn / totalInt) * 100) : 0;
+        });
+
+        const ctx1 = document.getElementById('chartPuntosEquipo');
+        if (ctx1) {
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: jornadas,
+                    datasets: [{
+                        label: 'Puntos',
+                        data: puntosEquipo,
+                        backgroundColor: 'rgba(255, 107, 53, 0.8)',
+                        borderColor: 'rgba(255, 107, 53, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Puntos del Equipo por Jornada', font: { size: 16, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Puntos' } }
+                    }
+                }
+            });
+        }
+
+        const ctx2 = document.getElementById('chartFaltasEquipo');
+        if (ctx2) {
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: jornadas,
+                    datasets: [{
+                        label: 'Faltas',
+                        data: faltasEquipo,
+                        borderColor: 'rgba(220, 38, 38, 1)',
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Faltas del Equipo por Jornada', font: { size: 16, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Faltas' } }
+                    }
+                }
+            });
+        }
+
+        const ctx3 = document.getElementById('chartTirosEquipo');
+        if (ctx3) {
+            new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: jornadas,
+                    datasets: [
+                        {
+                            label: 'T2 anotados',
+                            data: t2_anotados,
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'T3 anotados',
+                            data: t3_anotados,
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'TL anotados',
+                            data: tl_anotados,
+                            borderColor: 'rgba(245, 158, 11, 1)',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        title: { display: true, text: 'Tiros Anotados por Tipo', font: { size: 16, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Tiros anotados' } }
+                    }
+                }
+            });
+        }
+
+        const ctx4 = document.getElementById('chartPorcentajeTLEquipo');
+        if (ctx4) {
+            new Chart(ctx4, {
+                type: 'line',
+                data: {
+                    labels: jornadas,
+                    datasets: [{
+                        label: '% TL',
+                        data: porcentajesTL,
+                        borderColor: 'rgba(168, 85, 247, 1)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: '% de Acierto en Tiros Libres', font: { size: 16, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, title: { display: true, text: 'Porcentaje (%)' } }
+                    }
+                }
+            });
+        }
+    }
+
+    function crearGraficasJugador(nombre) {
+        const datos = datosJugadores[nombre];
+        if (!datos || datos.partidos.length === 0) return;
+
+        const partidosOrdenados = [...datos.partidos].sort((a, b) => parseInt(a.jornada) - parseInt(b.jornada));
+        const jornadas = partidosOrdenados.map(p => `J${p.jornada}`);
+
+        const porcTL = partidosOrdenados.map(p => 
+            p.tl_int > 0 ? Math.round((p.tl_an / p.tl_int) * 100) : 0
+        );
+        const puntosT2 = partidosOrdenados.map(p => p.t2_an * 2);
+        const puntosT3 = partidosOrdenados.map(p => p.t3_an * 3);
+        const faltas = partidosOrdenados.map(p => p.fc);
+
+        const ctx1 = document.getElementById('chartJugadorTL');
+        if (ctx1) {
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: jornadas,
+                    datasets: [{
+                        label: '% TL',
+                        data: porcTL,
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: '% Tiros Libres por Jornada', font: { size: 16, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, title: { display: true, text: '%' } }
+                    }
+                }
+            });
+        }
+
+        const ctx2 = document.getElementById('chartJugadorT2');
+        if (ctx2) {
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: jornadas,
+                    datasets: [{
+                        label: 'Puntos T2',
+                        data: puntosT2,
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Puntos de Tiros de 2 por Jornada', font: { size: 16, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Puntos' } }
+                    }
+                }
+            });
+        }
+
+        const ctx3 = document.getElementById('chartJugadorT3');
+        if (ctx3) {
+            new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: jornadas,
+                    datasets: [{
+                        label: 'Puntos T3',
+                        data: puntosT3,
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Puntos de tiros de 3 por Jornada', font: { size: 16, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Puntos' } }
+                    }
+                }
+            });
+        }
+
+        const ctx4 = document.getElementById('chartJugadorFaltas');
+        if (ctx4) {
+            new Chart(ctx4, {
+                type: 'line',
+                data: {
+                    labels: jornadas,
+                    datasets: [{
+                        label: 'Faltas',
+                        data: faltas,
+                        borderColor: 'rgba(220, 38, 38, 1)',
+                        backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Faltas por Jornada', font: { size: 16, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Faltas' } }
+                    }
+                }
+            });
+        }
     }
 
     async function cargarPartidos() {
@@ -1530,6 +1919,16 @@ async function guardarActa() {
                             >
                                 🏆 Resultados
                             </button>
+                            <button
+                                onclick="window.cambiarTab('estadisticas')"
+                                class="flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
+                                    activeTab === 'estadisticas'
+                                        ? 'bg-orange-600 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }"
+                            >
+                                📊 Estadísticas
+                            </button>
                         </div>
 
                         <div>
@@ -1540,12 +1939,80 @@ async function guardarActa() {
                                         <p class="text-gray-500 text-center py-8">No hay partidos programados</p>
                                     ` : partidosCalendario.map(p => generarPartidoCard(p)).join('')}
                                 </div>
-                            ` : `
+                            ` : activeTab === 'resultados' ? `
                                 <div>
                                     <h2 class="text-2xl font-bold text-gray-800 mb-4">🏆 Resultados</h2>
                                     ${partidosFinalizados.length === 0 ? `
                                         <p class="text-gray-500 text-center py-8">No hay resultados todavía</p>
                                     ` : partidosFinalizados.map(p => generarPartidoCard(p)).join('')}
+                                </div>
+                            ` : `
+                                <div>
+                                    <h2 class="text-2xl font-bold text-gray-800 mb-4">📊 Estadísticas</h2>
+                                    ${actas.length === 0 ? `
+                                        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                                            <p class="text-gray-500 text-lg">No hay estadísticas disponibles todavía</p>
+                                            <p class="text-gray-400 text-sm mt-2">Las estadísticas aparecerán cuando se suban las actas de los partidos</p>
+                                        </div>
+                                    ` : `
+                                        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                                            <h3 class="text-xl font-bold text-gray-800 mb-4">🏀 Estadísticas del Equipo</h3>
+                                            
+                                            <div class="mb-6">
+                                                <h4 class="font-semibold text-gray-700 mb-3">Puntos por Jornada</h4>
+                                                <div class="chart-container">
+                                                    <canvas id="chartPuntosEquipo"></canvas>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-6">
+                                                <h4 class="font-semibold text-gray-700 mb-3">Faltas por Jornada</h4>
+                                                <div class="chart-container">
+                                                    <canvas id="chartFaltasEquipo"></canvas>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-6">
+                                                <h4 class="font-semibold text-gray-700 mb-3">Tiros Anotados por Tipo</h4>
+                                                <div class="chart-container">
+                                                    <canvas id="chartTirosEquipo"></canvas>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <h4 class="font-semibold text-gray-700 mb-3">% Tiros Libres del Equipo</h4>
+                                                <div class="chart-container">
+                                                    <canvas id="chartPorcentajeTLEquipo"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-white rounded-lg shadow-md p-6">
+                                            <h3 class="text-xl font-bold text-gray-800 mb-4">👥 Estadísticas Individuales</h3>
+                                            
+                                            <div class="mb-6">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un jugador:</label>
+                                                <select 
+                                                    onchange="window.cambiarJugadorGlobal(this.value)"
+                                                    class="w-full border border-gray-300 p-3 rounded-lg bg-white"
+                                                >
+                                                    <option value="">-- Elige un jugador --</option>
+                                                    ${Object.keys(datosJugadores).sort().map(nombre => {
+                                                        const datos = datosJugadores[nombre];
+                                                        return '<option value="' + nombre + '" ' + (jugadorSeleccionado === nombre ? 'selected' : '') + '>' +
+                                                            nombre + ' (' + datos.totalPts + ' pts, ' + datos.partidos.length + ' PJ)' +
+                                                        '</option>';
+                                                    }).join('')}
+                                                </select>
+                                            </div>
+
+                                            ${jugadorSeleccionado && datosJugadores[jugadorSeleccionado] ? '<div class="bg-orange-50 p-4 rounded-lg mb-6"><h4 class="font-bold text-gray-800 mb-2">Resumen de ' + jugadorSeleccionado + '</h4><div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center text-sm"><div><div class="text-gray-600 font-medium">PJ</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].partidos.length + '</div></div><div><div class="text-gray-600 font-medium">PTS</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalPts + '</div></div><div><div class="text-gray-600 font-medium">MIN</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalMin + '</div></div><div><div class="text-gray-600 font-medium">TL%</div><div class="text-xl font-bold text-orange-600">' + (datosJugadores[jugadorSeleccionado].totalTL_int > 0 ? Math.round((datosJugadores[jugadorSeleccionado].totalTL_an / datosJugadores[jugadorSeleccionado].totalTL_int) * 100) : 0) + '%</div></div><div><div class="text-gray-600 font-medium">FC</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalFC + '</div></div></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">% Tiros Libres por Jornada</h4><div class="chart-container"><canvas id="chartJugadorTL"></canvas></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">Puntos de tiros de 2 por Jornada</h4><div class="chart-container"><canvas id="chartJugadorT2"></canvas></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">Puntos de iros de 3 por Jornada</h4><div class="chart-container"><canvas id="chartJugadorT3"></canvas></div></div><div><h4 class="font-semibold text-gray-700 mb-3">Faltas por Jornada</h4><div class="chart-container"><canvas id="chartJugadorFaltas"></canvas></div></div>' : `
+                                                <div class="text-center py-8 text-gray-500">
+                                                    Selecciona un jugador para ver sus estadísticas individuales
+                                                </div>
+                                            `}
+                                        </div>
+                                    `}
                                 </div>
                             `}
                         </div>
@@ -1569,7 +2036,7 @@ async function guardarActa() {
     </p>
     
     <p class="text-xs text-gray-500 mt-3">
-        Para cualquier consulta sobre privacidad: <a href="mailto:edgarmerono@gmail.com" class="text-orange-600 hover:underline">edgarmerono@gmail.com</a>
+        Para cualquier consulta sobre privacidad: <a href="mailto:cbcmanisesweb@gmail.com" class="text-orange-600 hover:underline">cbcmanisesweb@gmail.com</a>
     </p>
     
     <p class="text-xs text-gray-500 mt-2">Temporada 2025/26 • Preferente Cadete Masculino Grupo D</p>
@@ -1578,6 +2045,7 @@ async function guardarActa() {
             </div>
         `;
     }
+    
 
     // Exponer funciones globales
     window.handleAdminLoginGlobal = handleAdminLogin;
@@ -1615,6 +2083,14 @@ async function guardarActa() {
     window.cambiarTab = (tab) => {
         activeTab = tab;
         renderizar();
+        if (tab === 'estadisticas' && actas.length > 0) {
+            setTimeout(() => {
+                crearGraficasEquipo();
+                if (jugadorSeleccionado) {
+                    crearGraficasJugador(jugadorSeleccionado);
+                }
+            }, 200);
+        }
     };
     window.cancelarEdicion = () => {
         editingPartido = null;
@@ -1625,7 +2101,7 @@ async function guardarActa() {
         modoAdmin = modo;
         renderizar();
     };
-
+    window.cambiarJugadorGlobal = cambiarJugador;
     // Funciones de Actas
     window.iniciarCreacionActaGlobal = iniciarCreacionActa;
     window.añadirJugadorActaGlobal = añadirJugadorActa;
