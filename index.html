@@ -373,17 +373,28 @@
         });
     }
 
-    function cambiarJugador(nombre) {
+function cambiarJugador(nombre) {
         jugadorSeleccionado = nombre;
         renderizar();
-        if (nombre) {
-            setTimeout(() => crearGraficasJugador(nombre), 100);
-        }
+        setTimeout(() => {
+            crearGraficasEquipo(); // Recrear las del equipo
+            if (nombre) {
+                crearGraficasJugador(nombre);
+            }
+        }, 200);
     }
 
     function crearGraficasEquipo() {
-        if (actas.length === 0) return;
+        // Destruir gráficas anteriores si existen
+        ['chartPuntosEquipo', 'chartFaltasEquipo', 'chartTirosEquipo', 'chartPorcentajeTLEquipo'].forEach(id => {
+            const canvas = document.getElementById(id);
+            if (canvas) {
+                const chart = Chart.getChart(canvas);
+                if (chart) chart.destroy();
+            }
+        });
 
+        if (actas.length === 0) return;
         // Filtrar solo actas válidas con jugadores
         const actasValidas = actas.filter(a => a.jugadores && Array.isArray(a.jugadores) && a.jugadores.length > 0);
         
@@ -553,6 +564,15 @@
     }
 
     function crearGraficasJugador(nombre) {
+        // Destruir gráficas anteriores si existen
+        ['chartJugadorTL', 'chartJugadorT2', 'chartJugadorT3', 'chartJugadorFaltas'].forEach(id => {
+            const canvas = document.getElementById(id);
+            if (canvas) {
+                const chart = Chart.getChart(canvas);
+                if (chart) chart.destroy();
+            }
+        });
+
         const datos = datosJugadores[nombre];
         if (!datos || datos.partidos.length === 0) return;
 
@@ -1955,6 +1975,7 @@ async function guardarActa() {
                                             <p class="text-gray-400 text-sm mt-2">Las estadísticas aparecerán cuando se suban las actas de los partidos</p>
                                         </div>
                                     ` : `
+                                        <!-- ESTADÍSTICAS DEL EQUIPO (SIEMPRE VISIBLES) -->
                                         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                                             <h3 class="text-xl font-bold text-gray-800 mb-4">🏀 Estadísticas del Equipo</h3>
                                             
@@ -1987,6 +2008,7 @@ async function guardarActa() {
                                             </div>
                                         </div>
 
+                                        <!-- ESTADÍSTICAS INDIVIDUALES (DESPUÉS DEL EQUIPO) -->
                                         <div class="bg-white rounded-lg shadow-md p-6">
                                             <h3 class="text-xl font-bold text-gray-800 mb-4">👥 Estadísticas Individuales</h3>
                                             
@@ -2006,7 +2028,7 @@ async function guardarActa() {
                                                 </select>
                                             </div>
 
-                                            ${jugadorSeleccionado && datosJugadores[jugadorSeleccionado] ? '<div class="bg-orange-50 p-4 rounded-lg mb-6"><h4 class="font-bold text-gray-800 mb-2">Resumen de ' + jugadorSeleccionado + '</h4><div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center text-sm"><div><div class="text-gray-600 font-medium">PJ</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].partidos.length + '</div></div><div><div class="text-gray-600 font-medium">PTS</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalPts + '</div></div><div><div class="text-gray-600 font-medium">MIN</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalMin + '</div></div><div><div class="text-gray-600 font-medium">TL%</div><div class="text-xl font-bold text-orange-600">' + (datosJugadores[jugadorSeleccionado].totalTL_int > 0 ? Math.round((datosJugadores[jugadorSeleccionado].totalTL_an / datosJugadores[jugadorSeleccionado].totalTL_int) * 100) : 0) + '%</div></div><div><div class="text-gray-600 font-medium">FC</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalFC + '</div></div></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">% Tiros Libres por Jornada</h4><div class="chart-container"><canvas id="chartJugadorTL"></canvas></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">Puntos de tiros de 2 por Jornada</h4><div class="chart-container"><canvas id="chartJugadorT2"></canvas></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">Puntos de iros de 3 por Jornada</h4><div class="chart-container"><canvas id="chartJugadorT3"></canvas></div></div><div><h4 class="font-semibold text-gray-700 mb-3">Faltas por Jornada</h4><div class="chart-container"><canvas id="chartJugadorFaltas"></canvas></div></div>' : `
+                                            ${jugadorSeleccionado && datosJugadores[jugadorSeleccionado] ? '<div class="bg-orange-50 p-4 rounded-lg mb-6"><h4 class="font-bold text-gray-800 mb-2">Resumen de ' + jugadorSeleccionado + '</h4><div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center text-sm"><div><div class="text-gray-600 font-medium">PJ</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].partidos.length + '</div></div><div><div class="text-gray-600 font-medium">PTS</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalPts + '</div></div><div><div class="text-gray-600 font-medium">MIN</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalMin + '</div></div><div><div class="text-gray-600 font-medium">TL%</div><div class="text-xl font-bold text-orange-600">' + (datosJugadores[jugadorSeleccionado].totalTL_int > 0 ? Math.round((datosJugadores[jugadorSeleccionado].totalTL_an / datosJugadores[jugadorSeleccionado].totalTL_int) * 100) : 0) + '%</div></div><div><div class="text-gray-600 font-medium">FC</div><div class="text-xl font-bold text-orange-600">' + datosJugadores[jugadorSeleccionado].totalFC + '</div></div></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">% Tiros Libres por Jornada</h4><div class="chart-container"><canvas id="chartJugadorTL"></canvas></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">Puntos de Tiros de 2 por Jornada</h4><div class="chart-container"><canvas id="chartJugadorT2"></canvas></div></div><div class="mb-6"><h4 class="font-semibold text-gray-700 mb-3">Puntos de Tiros de 3 por Jornada</h4><div class="chart-container"><canvas id="chartJugadorT3"></canvas></div></div><div><h4 class="font-semibold text-gray-700 mb-3">Faltas por Jornada</h4><div class="chart-container"><canvas id="chartJugadorFaltas"></canvas></div></div>' : `
                                                 <div class="text-center py-8 text-gray-500">
                                                     Selecciona un jugador para ver sus estadísticas individuales
                                                 </div>
