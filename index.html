@@ -1201,13 +1201,27 @@ async function guardarActa() {
                     </p>
                 </div>
 
-                ${partido.finalizado && tieneActa ? `
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <button onclick="window.verActaGlobal('${partido.id}')" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700">
-                            📊 Ver Acta Oficial
-                        </button>
-                    </div>
-                ` : ''}
+${partido.finalizado && tieneActa ? `
+    <div class="mt-4 pt-4 border-t border-gray-200">
+        <button onclick="window.verActaGlobal('${partido.id}')" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700">
+            📊 Ver Acta Oficial
+        </button>
+    </div>
+` : partido.finalizado && partido.sinActa ? `
+    <div class="mt-4 pt-4 border-t border-gray-200">
+        <div class="bg-orange-100 border-l-4 border-orange-500 p-4 rounded-lg">
+            <div class="flex items-start gap-3">
+                <span class="text-xl">⚠️</span>
+                <div>
+                    <p class="font-bold text-orange-800 text-sm">Acta no disponible</p>
+                    <p class="text-xs text-orange-700 mt-1">
+                        Problemas técnicos durante el partido
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+` : ''}
 
                 ${isAdmin && !partido.finalizado ? `
                     <div class="mt-4 pt-4 border-t border-gray-200">
@@ -2172,6 +2186,7 @@ async function guardarActa() {
 </body>
 
 </html>
+
 
 
 
