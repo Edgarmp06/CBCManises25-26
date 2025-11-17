@@ -27,12 +27,43 @@ Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 
 
 ## 🛠️ Tecnologías
 
-- **Frontend**: HTML, JavaScript (Vanilla), Tailwind CSS
+- **Frontend**: HTML, JavaScript ES6 Modules, Tailwind CSS
 - **Gráficas**: Chart.js 4.4.0
 - **Backend**: Firebase Firestore
 - **Autenticación**: Firebase Auth
 - **Hosting**: Vercel
 - **Analytics**: Vercel Analytics + Speed Insights
+
+## 📁 Estructura del Proyecto
+
+```
+web_balonmcesto/
+├── index.html              # Página principal (en la raíz)
+├── css/
+│   └── styles.css          # Estilos separados
+├── js/
+│   ├── config.js           # Configuración Firebase y constantes
+│   ├── partidos.js         # Gestión de partidos
+│   ├── actas.js            # Gestión de actas
+│   ├── estadisticas.js     # Procesamiento de estadísticas y gráficas
+│   ├── admin.js            # Panel de administración
+│   ├── ui.js               # Gestión de interfaz
+│   └── app.js              # Archivo principal (punto de entrada)
+├── imagenes/               # Imágenes de fondo del equipo
+├── logos/                  # Logos de equipos rivales
+├── .gitignore              # Archivos ignorados por Git
+├── robots.txt              # Configuración SEO para crawlers
+├── sitemap.xml             # Mapa del sitio para SEO
+├── loaderio-*.txt          # Verificación de test de carga
+└── README.md               # Este archivo
+```
+
+### 🏗️ Arquitectura de la Aplicación
+
+- **HTML estático**: Sin frameworks, solo vanilla JavaScript ES6 Modules
+- **Modularización**: Cada funcionalidad en su propio módulo JS
+- **Firebase**: Base de datos en tiempo real sin servidor backend
+- **Despliegue**: GitHub → Vercel (automático en cada push)
 
 ## 📊 Estadísticas (3 de noviembre de 2025)
 
@@ -146,6 +177,36 @@ Las estadísticas se procesan automáticamente desde las actas:
 
 El proyecto se despliega automáticamente en Vercel cuando se hace push a la rama `main`.
 
+### Configuración de Despliegue
+
+1. **Repositorio**: GitHub (público o privado)
+2. **Plataforma**: Vercel
+3. **Configuración**:
+   - Build Command: Ninguno (HTML estático)
+   - Output Directory: `.` (raíz del proyecto)
+   - Framework Preset: Other
+4. **Variables de entorno**: No necesarias (Firebase usa credenciales públicas de frontend)
+
+### Seguridad Firebase
+
+Las credenciales de Firebase en `js/config.js` son públicas por diseño. La seguridad se gestiona mediante:
+- **Firebase Security Rules**: Controlan quién puede leer/escribir en la base de datos
+- **Firebase Auth**: Autenticación para el panel de administración
+- **Validación**: En las reglas de Firestore, no en el cliente
+
+**Ejemplo de Security Rules**:
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /partidos/{partidoId} {
+      allow read: if true;  // Cualquiera puede leer
+      allow write: if request.auth != null;  // Solo autenticados
+    }
+  }
+}
+```
+
 ## 🎉 Hitos del Proyecto
 
 - **9 Oct 2025**: 🚀 Lanzamiento inicial de la web
@@ -165,7 +226,7 @@ El proyecto se despliega automáticamente en Vercel cuando se hace push a la ram
 
 Desarrollado por **Edgar MP** para el CBC Manises.
 
-**Contacto**: 
+**Contacto**:
 - 📧 Email: cbcmanisesweb@gmail.com
 - 📱 Instagram: [@edgarmp06](https://instagram.com/edgarmp06)
 
