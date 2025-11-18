@@ -313,11 +313,9 @@ window.actualizarEstadisticaJugadorGlobal = (index, campo, valor) => {
 
 // === FUNCIONES DE EDICIÓN DE PARTIDOS ===
 window.editarPartidoGlobal = (id) => {
-    const partido = app.partidosManager.getPartidoById(id);
-    if (!partido) {
-        alert('❌ Partido no encontrado');
-        return;
-    }
+    // Activar modo edición en el UIManager
+    app.uiManager.iniciarEdicionPartido(id);
+};
 
     // Crear formulario de edición
     const resultadoLocal = prompt('Resultado Local:', partido.resultadoLocal || '');
