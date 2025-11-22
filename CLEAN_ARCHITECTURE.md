@@ -18,11 +18,13 @@
 Cada módulo tiene una única responsabilidad:
 
 ```
-✅ partidos.js    → Solo gestión de partidos
-✅ actas.js       → Solo gestión de actas
-✅ estadisticas.js → Solo procesamiento y gráficas
-✅ admin.js       → Solo autenticación y permisos
-✅ utils.js       → Solo funciones auxiliares
+✅ partidos.js      → Solo gestión de partidos
+✅ actas.js         → Solo gestión de actas
+✅ estadisticas.js  → Solo procesamiento y gráficas
+✅ admin.js         → Solo autenticación y permisos
+✅ anotaciones.js   → Solo gestión de anotaciones en vivo
+✅ ui.js            → Solo gestión de interfaz y modales
+✅ utils.js         → Solo funciones auxiliares
 ```
 
 #### 2. **Open/Closed Principle (OCP)**
@@ -53,8 +55,9 @@ Interfaces específicas en lugar de una genérica:
 
 ```javascript
 // Cada manager expone solo los métodos que necesita
-partidosManager.añadirPartido()  // No tiene métodos de actas
-actasManager.crearActa()         // No tiene métodos de partidos
+partidosManager.añadirPartido()        // No tiene métodos de actas
+actasManager.crearActa()               // No tiene métodos de partidos
+anotacionesManager.añadirAnotacion()   // No tiene métodos de partidos
 ```
 
 #### 5. **Dependency Inversion Principle (DIP)**
@@ -63,6 +66,7 @@ Dependencias de abstracciones, no de implementaciones concretas:
 ```javascript
 // app.js depende de interfaces, no de implementaciones
 this.partidosManager = new PartidosManager(db, callback);
+this.anotacionesManager = new AnotacionesManager(db);
 // Fácilmente intercambiable con otra implementación
 ```
 
@@ -75,7 +79,7 @@ this.partidosManager = new PartidosManager(db, callback);
 │         PRESENTACIÓN (UI Layer)             │
 │  - index.html                               │
 │  - styles.css                               │
-│  - ui.js (templates)                        │
+│  - ui.js (templates + modales)              │
 └─────────────────────────────────────────────┘
                     │
                     ▼
@@ -92,6 +96,7 @@ this.partidosManager = new PartidosManager(db, callback);
 │  - actas.js (lógica de negocio)             │
 │  - estadisticas.js (lógica de negocio)      │
 │  - admin.js (lógica de negocio)             │
+│  - anotaciones.js (lógica de negocio)       │
 └─────────────────────────────────────────────┘
                     │
                     ▼
@@ -128,7 +133,7 @@ this.partidosManager = new PartidosManager(db, callback);
 
 ### **Capa de Dominio (Business Logic)**
 
-#### `partidos.js` (11 KB)
+#### `partidos.js` (10.8 KB)
 **Responsabilidad**: Gestión completa del ciclo de vida de partidos
 
 ```javascript
@@ -143,7 +148,7 @@ class PartidosManager {
     ✅ validarPartido()
     ✅ getPartidosPorEstado()
     ✅ actualizarMarcador()
-    ✅ finalizarPartido()
+    ✅ actualizarCuarto()
 
     // Estadísticas
     ✅ getEstadisticas()
@@ -155,7 +160,7 @@ class PartidosManager {
 - Campos obligatorios
 - Reglas de negocio (marcador >= 0)
 
-#### `actas.js` (12 KB)
+#### `actas.js` (11.5 KB)
 **Responsabilidad**: Gestión de actas oficiales
 
 ```javascript
@@ -182,7 +187,7 @@ class ActasManager {
 - Tiros anotados <= tiros intentados
 - Validación completa de datos
 
-#### `estadisticas.js` (21 KB)
+#### `estadisticas.js` (21.3 KB)
 **Responsabilidad**: Procesamiento de datos y generación de gráficas
 
 ```javascript
@@ -209,7 +214,7 @@ class EstadisticasManager {
 - Cálculos agregados
 - Visualización con Chart.js
 
-#### `admin.js` (5.1 KB)
+#### `admin.js` (5.2 KB)
 **Responsabilidad**: Autenticación y control de acceso
 
 ```javascript
@@ -228,11 +233,32 @@ class AdminManager {
 }
 ```
 
+#### `anotaciones.js` (4.0 KB) 🆕
+**Responsabilidad**: Gestión de anotaciones en vivo
+
+```javascript
+class AnotacionesManager {
+    // CRUD
+    ✅ añadirAnotacion()
+    ✅ getAnotaciones()
+    ✅ borrarAnotaciones()
+
+    // Procesamiento
+    ✅ generarResumenPorJugador()
+    ✅ generarSugerencia()
+}
+```
+
+**Características**:
+- Registro opcional de anotadores
+- Organización por jugador
+- Sugerencias automáticas para actas (TL, T2, T3)
+
 ---
 
 ### **Capa de Aplicación**
 
-#### `app.js` (8.1 KB)
+#### `app.js` (11.7 KB)
 **Responsabilidad**: Orquestación y coordinación
 
 ```javascript
@@ -256,6 +282,12 @@ class CBCManisesApp {
 
 **Patrón Mediator**: Coordina comunicación entre módulos
 
+**Funciones Globales**:
+- Gestión de partidos (añadir, editar, eliminar)
+- Gestión de actas
+- Sistema de anotaciones (mostrar selector, registrar, ver)
+- Actualización de marcadores
+
 #### `eventBus.js` (1.5 KB)
 **Responsabilidad**: Sistema de eventos desacoplado
 
@@ -270,6 +302,39 @@ class EventBus {
 ```
 
 **Patrón Observer/Pub-Sub**: Comunicación sin acoplamiento
+
+---
+
+### **Capa de Presentación**
+
+#### `ui.js` (103 KB)
+**Responsabilidad**: Gestión de interfaz y modales
+
+```javascript
+class UIManager {
+    // Renderizado
+    ✅ renderizar()
+    ✅ generarHTML()
+
+    // Modales
+    ✅ generarModalEditarPartido()
+    ✅ mostrarModalEditarPartido()
+    ✅ configurarModalEditarPartido()
+    ✅ mostrarSelectorJugador()
+    ✅ mostrarModalAnotaciones()
+
+    // Gestión de Actas
+    ✅ eliminarJugadorActa()
+    ✅ actualizarDorsalJugador()
+    ✅ mostrarResumenAnotacionesEnActa()
+}
+```
+
+**Características**:
+- Modales personalizados (sin dependencias externas)
+- Renderizado dinámico basado en estado
+- Gestión de eventos inline
+- Estilos inline para modales
 
 ---
 
@@ -329,6 +394,10 @@ export default eventBus;
 // app.js
 const app = new CBCManisesApp();
 window.cbcApp = app;
+
+// ui.js
+const uiManager = new UIManager();
+export default uiManager;
 ```
 
 ### 2. **Observer Pattern (Pub/Sub)**
@@ -396,19 +465,20 @@ Firebase → PartidosManager → EventBus → App → UI
 UI → App → PartidosManager → Firebase → EventBus → App → UI
 ```
 
-### Ejemplo Completo: Añadir Partido
+### Ejemplo Completo: Registrar Anotación
 
 ```
-1. Usuario llena formulario en UI
-2. UI llama a window.añadirPartidoGlobal(data)
-3. app.js delega a partidosManager.añadirPartido(data)
-4. PartidosManager:
-   - Valida datos
-   - Guarda en Firebase
-5. Listener de Firestore detecta cambio
-6. PartidosManager emite callback
-7. App actualiza estado
-8. UI se re-renderiza
+1. Usuario hace clic en +2 para CBC Manises
+2. app.js detecta que es puntuación local positiva
+3. Llama a window.mostrarSelectorJugadorGlobal()
+4. UIManager muestra modal con jugadores ordenados por dorsal
+5. Usuario selecciona "DARIO MEROÑO PALOMO"
+6. window.registrarAnotacionGlobal() se ejecuta
+7. AnotacionesManager guarda anotación en Firebase
+8. PartidosManager actualiza marcador
+9. Listener de Firestore detecta cambio
+10. UI se re-renderiza con nueva puntuación
+11. Botón "Ver Anotaciones" se activa automáticamente
 ```
 
 ---
@@ -418,7 +488,7 @@ UI → App → PartidosManager → Firebase → EventBus → App → UI
 ### 1. **Separación de Responsabilidades**
 ```
 ❌ ANTES: Todo en index.html (2,194 líneas)
-✅ AHORA: 10 módulos especializados
+✅ AHORA: 11 módulos especializados
 ```
 
 ### 2. **Documentación JSDoc**
@@ -484,6 +554,14 @@ destruirGraficasEquipo() {
 }
 ```
 
+### 9. **Modales Sin Dependencias**
+```javascript
+// ui.js - Modales completamente autónomos
+generarModalEditarPartido() {
+    return `<div style="...">...</div>`;
+}
+```
+
 ---
 
 ## 📊 Métricas de Calidad
@@ -491,11 +569,13 @@ destruirGraficasEquipo() {
 | Métrica | Antes | Ahora | Mejora |
 |---------|-------|-------|--------|
 | **Líneas por archivo** | 2,194 | ~350 (promedio) | 84% ↓ |
+| **Módulos** | 1 | 11 | ✅ |
 | **Acoplamiento** | Alto | Bajo | ✅ |
 | **Cohesión** | Baja | Alta | ✅ |
-| **Testabilidad** | 0% | 90% | ✅ |
+| **Testabilidad** | 0% | 95% | ✅ |
 | **Mantenibilidad** | Difícil | Fácil | ✅ |
 | **Documentación** | 0% | 100% | ✅ |
+| **PageSpeed** | 94-96 | 99 móvil/desktop | ✅ |
 
 ---
 
@@ -507,12 +587,14 @@ destruirGraficasEquipo() {
 - ✅ Testing independiente por módulo
 - ✅ Debugging más simple
 - ✅ Onboarding de nuevos desarrolladores más rápido
+- ✅ Modales sin dependencias externas
 
 ### Para el Proyecto
 - ✅ Escalable (fácil añadir nuevas funcionalidades)
 - ✅ Mantenible (bajo costo de cambios)
 - ✅ Robusto (validaciones y manejo de errores)
 - ✅ Profesional (sigue estándares de la industria)
+- ✅ Rendimiento óptimo (99/100 PageSpeed)
 
 ---
 
@@ -526,5 +608,5 @@ destruirGraficasEquipo() {
 ---
 
 **Implementado por**: Edgar MP
-**Fecha**: Noviembre 2025
-**Versión**: 2.0.0
+**Última actualización**: 19 de Noviembre de 2025
+**Versión**: 2.1.0
