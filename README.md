@@ -8,6 +8,11 @@ Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 
 
 - 📅 **Calendario de partidos** - Todos los partidos de la temporada
 - 🔴 **Marcadores en directo** - Seguimiento en tiempo real durante los partidos
+- 📝 **Anotaciones en vivo** - Sistema opcional para registrar anotadores durante el partido
+  - Selector de jugador al anotar puntos (+1, +2, +3)
+  - Visualización pública de anotaciones
+  - Resumen organizado por jugador con sugerencias para el acta
+  - Opción de saltar registro si no se desea usar
 - 🏆 **Resultados** - Historial completo de partidos finalizados
 - 📊 **Actas oficiales** - Estadísticas detalladas de cada jugador por partido
 - 📈 **Gráficas de estadísticas** - Visualización de evolución del equipo e individual
@@ -16,10 +21,11 @@ Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 
   - Selector de jugador con resumen de totales
   - Gráficas interactivas con Chart.js
 - 📱 **Diseño responsive** - Optimizado para móvil, tablet y escritorio
-- ⚡ **Rendimiento excelente** - 94-96/100 en PageSpeed Insights
+- ⚡ **Rendimiento excelente** - 99/100 en PageSpeed Insights (móvil y desktop)
 - 💬 **Canal de WhatsApp** - Botón directo para unirse al canal oficial
 - 🔐 **Panel de administración** - Gestión completa de partidos, actas y estadísticas
 - 🎨 **Galería de fotos** - Fondo rotativo con imágenes del equipo
+- ✏️ **Edición de partidos** - Modal intuitivo para editar partidos desde cualquier vista
 
 ### 🚀 Próximamente
 
@@ -38,23 +44,27 @@ Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 
 
 ```
 web_balonmcesto/
-├── index.html              # Página principal (en la raíz)
+├── index.html              # Página principal
 ├── css/
-│   └── styles.css          # Estilos separados
+│   └── styles.css          # Estilos personalizados
 ├── js/
 │   ├── config.js           # Configuración Firebase y constantes
 │   ├── partidos.js         # Gestión de partidos
 │   ├── actas.js            # Gestión de actas
 │   ├── estadisticas.js     # Procesamiento de estadísticas y gráficas
 │   ├── admin.js            # Panel de administración
-│   ├── ui.js               # Gestión de interfaz
-│   └── app.js              # Archivo principal (punto de entrada)
+│   ├── anotaciones.js      # Sistema de anotaciones en vivo
+│   ├── ui.js               # Gestión de interfaz y modales
+│   ├── app.js              # Archivo principal (punto de entrada)
+│   ├── utils.js            # Funciones auxiliares
+│   ├── eventBus.js         # Sistema de eventos
+│   └── constants.js        # Constantes de la aplicación
 ├── imagenes/               # Imágenes de fondo del equipo
 ├── logos/                  # Logos de equipos rivales
 ├── .gitignore              # Archivos ignorados por Git
 ├── robots.txt              # Configuración SEO para crawlers
 ├── sitemap.xml             # Mapa del sitio para SEO
-├── loaderio-*.txt          # Verificación de test de carga
+├── CLEAN_ARCHITECTURE.md   # Documentación de arquitectura
 └── README.md               # Este archivo
 ```
 
@@ -65,15 +75,24 @@ web_balonmcesto/
 - **Firebase**: Base de datos en tiempo real sin servidor backend
 - **Despliegue**: GitHub → Vercel (automático en cada push)
 
-## 📊 Estadísticas (3 de noviembre de 2025)
+## 📊 Estadísticas (19 de noviembre de 2025)
 
-- **Visitantes**: +200 visitantes únicos
-- **Páginas vistas**: +550
-- **Rendimiento**: 96/100 desktop, 95/100 mobile
-- **Seguidores del canal**: 15+ personas
+### Rendimiento
+- **PageSpeed Insights**:
+  - 🚀 Móvil: **99/100**
+  - 🖥️ Desktop: **99/100**
 - **Test de carga**: ✅ Soporta 10,000 usuarios simultáneos
-- **Actas subidas**: 3+ partidos con estadísticas completas
+
+### Engagement (últimos 7 días)
+- **Visitantes únicos**: 34
+- **Páginas vistas**: 56
+- **Bounce Rate**: 71%
+- **Seguidores del canal WhatsApp**: 22 personas
+
+### Contenido
+- **Actas subidas**: Múltiples partidos con estadísticas completas
 - **Gráficas generadas**: Dinámicas en tiempo real
+- **Anotaciones registradas**: Sistema activo y funcionando
 
 ## 🔗 Enlaces
 
@@ -88,6 +107,7 @@ web_balonmcesto/
 
 - Ver calendario de próximos partidos
 - Seguir partidos en directo
+- **Ver anotaciones en vivo durante los partidos**
 - Consultar resultados históricos
 - Ver actas oficiales con estadísticas detalladas
 - **📊 Ver gráficas de evolución del equipo**
@@ -97,10 +117,12 @@ web_balonmcesto/
 
 ### Para Administradores
 
-- Añadir y editar partidos
+- Añadir y editar partidos mediante modal intuitivo
 - Actualizar marcadores en tiempo real
+- **Registrar anotadores opcionalmente durante el partido**
 - Gestionar cuartos del partido
 - Crear actas oficiales con estadísticas de jugadores
+- **Ver sugerencias automáticas de estadísticas basadas en anotaciones**
 - **Las gráficas se generan automáticamente al subir actas**
 - Control completo del contenido
 
@@ -120,7 +142,18 @@ web_balonmcesto/
   resultadoLocal: "",
   resultadoVisitante: "",
   enDirecto: false,
-  cuartoActual: ""
+  cuartoActual: "",
+  anotaciones: []  // Array de anotaciones en vivo
+}
+```
+
+### Anotaciones (Nuevo)
+```javascript
+{
+  jugador: "DARIO MEROÑO PALOMO",
+  puntos: 2,  // 1, 2 o 3
+  cuarto: "Q1",
+  timestamp: "2025-11-19T18:30:00.000Z"
 }
 ```
 
@@ -157,6 +190,7 @@ Las estadísticas se procesan automáticamente desde las actas:
 - **Por equipo**: Suma de todos los jugadores por jornada
 - **Por jugador**: Evolución individual a lo largo de la temporada
 - **Cálculos**: Porcentajes de acierto, totales acumulados, medias
+- **Sugerencias**: El sistema de anotaciones genera sugerencias automáticas para el acta
 
 ## 📈 Tipos de Gráficas
 
@@ -215,6 +249,7 @@ service cloud.firestore {
 - **22 Oct 2025**: 💬 Creación del canal de WhatsApp oficial
 - **31 Oct 2025**: 🗳️ Cierre de encuesta de funcionalidades (9 votos para gráficas)
 - **3 Nov 2025**: 📈 Gráficas de estadísticas implementadas
+- **19 Nov 2025**: 🎯 Sistema de anotaciones en vivo y modal de edición
 
 ## 🗳️ Encuesta de Funcionalidades (27-31 Oct 2025)
 
