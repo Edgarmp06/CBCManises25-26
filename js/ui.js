@@ -53,6 +53,11 @@ export class UIManager {
         if (estado.showAdminPanel) {
             this.configurarEventListenersAdmin();
         }
+
+        // Si es admin, configurar el modal de edición (siempre que esté disponible)
+        if (estado.isAdmin) {
+            this.configurarModalEditarPartido();
+        }
     }
 
     /**
@@ -62,6 +67,9 @@ export class UIManager {
         // Reiniciar datos temporales
         this.jugadoresActaTemporal = [];
         this.partidoSeleccionadoActa = null;
+
+        // === MODAL EDITAR PARTIDO ===
+        this.configurarModalEditarPartido();
 
         // === FORMULARIO AÑADIR PARTIDO ===
         const formPartido = document.getElementById('form-añadir-partido');
@@ -126,6 +134,9 @@ export class UIManager {
                             </p>
                             <p class="text-xs text-blue-600 mt-1">📍 ${partido.ubicacion}</p>
                         `;
+
+                        // Mostrar resumen de anotaciones si existen
+                        this.mostrarResumenAnotacionesEnActa(partido);
 
                         // Cargar automáticamente los jugadores del equipo
                         this.jugadoresActaTemporal = JUGADORES_EQUIPO.map(j => ({
@@ -394,6 +405,112 @@ export class UIManager {
     }
 
     /**
+     * Configura el modal de edición de partidos
+     */
+    configurarModalEditarPartido() {
+        const modal = document.getElementById('modal-editar-partido');
+        const btnCerrar = document.getElementById('btn-cerrar-modal-editar');
+        const btnCancelar = document.getElementById('btn-cancelar-editar');
+        const formEditar = document.getElementById('form-editar-partido');
+
+        // Cerrar modal al hacer clic en X o Cancelar
+        if (btnCerrar) {
+            btnCerrar.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        }
+
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        modal?.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Manejar envío del formulario
+        if (formEditar) {
+            formEditar.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const partidoId = document.getElementById('editar-partido-id').value;
+                const ubicacionSeleccionada = document.getElementById('editar-ubicacion').value;
+                const ubicacionConfig = UBICACIONES.find(u => u.nombre === ubicacionSeleccionada);
+                const esLocal = ubicacionConfig ? ubicacionConfig.esLocal : true;
+
+                // Obtener y limpiar valores de resultado (pueden estar vacíos)
+                const resultadoLocalValue = document.getElementById('editar-resultado-local').value.trim();
+                const resultadoVisitanteValue = document.getElementById('editar-resultado-visitante').value.trim();
+
+                const data = {
+                    fecha: document.getElementById('editar-fecha').value,
+                    hora: document.getElementById('editar-hora').value,
+                    rival: document.getElementById('editar-rival').value,
+                    esLocal: esLocal,
+                    ubicacion: ubicacionSeleccionada,
+                    jornada: document.getElementById('editar-jornada').value,
+                    finalizado: document.getElementById('editar-finalizado').checked,
+                    enDirecto: document.getElementById('editar-en-directo').checked,
+                    resultadoLocal: resultadoLocalValue,
+                    resultadoVisitante: resultadoVisitanteValue,
+                    cuartoActual: document.getElementById('editar-cuarto').value,
+                    sinActa: document.getElementById('editar-sin-acta')?.checked || false
+                };
+
+                console.log('📝 Partido ID:', partidoId);
+                console.log('📝 Datos de edición:', data);
+
+                try {
+                    console.log('⏳ Guardando partido...');
+                    await window.actualizarPartidoGlobal(partidoId, data);
+                    console.log('✅ Partido guardado correctamente');
+                    modal.style.display = 'none';
+                } catch (error) {
+                    console.error('❌ Error al editar partido:', error);
+                    alert('❌ Error: ' + error.message);
+                }
+            });
+        }
+    }
+
+    /**
+     * Muestra el modal de edición con los datos del partido
+     * @param {Object} partido - Datos del partido a editar
+     */
+    mostrarModalEditarPartido(partido) {
+        const modal = document.getElementById('modal-editar-partido');
+        if (!modal) {
+            console.error('❌ Modal de edición no encontrado');
+            return;
+        }
+
+        // Rellenar formulario con datos del partido
+        document.getElementById('editar-partido-id').value = partido.id;
+        document.getElementById('editar-fecha').value = partido.fecha;
+        document.getElementById('editar-hora').value = partido.hora;
+        document.getElementById('editar-rival').value = partido.rival;
+        document.getElementById('editar-ubicacion').value = partido.ubicacion;
+        document.getElementById('editar-jornada').value = partido.jornada;
+        document.getElementById('editar-finalizado').checked = partido.finalizado || false;
+        document.getElementById('editar-en-directo').checked = partido.enDirecto || false;
+        document.getElementById('editar-resultado-local').value = partido.resultadoLocal || '';
+        document.getElementById('editar-resultado-visitante').value = partido.resultadoVisitante || '';
+        document.getElementById('editar-cuarto').value = partido.cuartoActual || '';
+        if (document.getElementById('editar-sin-acta')) {
+            document.getElementById('editar-sin-acta').checked = partido.sinActa || false;
+        }
+
+        // Mostrar modal
+        modal.style.display = 'flex';
+        console.log('✅ Modal de edición abierto para partido:', partido.id);
+    }
+
+    /**
      * Actualiza el dorsal de un jugador
      * @param {number} index - Índice del jugador
      * @param {string} dorsal - Nuevo dorsal
@@ -450,6 +567,120 @@ export class UIManager {
                 </div>
 
                 ${this.generarFooter()}
+            </div>
+            ${isAdmin ? this.generarModalEditarPartido() : ''}
+        `;
+    }
+
+    /**
+     * Genera el modal de edición de partido
+     * @returns {string} HTML del modal
+     */
+    generarModalEditarPartido() {
+        return `
+            <!-- Modal Editar Partido -->
+            <div id="modal-editar-partido" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+                <div style="background: white; border-radius: 0.5rem; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="background: linear-gradient(to right, #ea580c, #f97316); color: white; padding: 1.5rem; border-radius: 0.5rem 0.5rem 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="font-size: 1.5rem; font-weight: bold; margin: 0;">✏️ Editar Partido</h3>
+                        <button id="btn-cerrar-modal-editar" style="background: white; color: #ea580c; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">✕</button>
+                    </div>
+
+                    <form id="form-editar-partido" style="padding: 1.5rem;">
+                        <input type="hidden" id="editar-partido-id">
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Fecha</label>
+                                <input type="date" id="editar-fecha" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Hora</label>
+                                <input type="time" id="editar-hora" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Ubicación</label>
+                            <select id="editar-ubicacion" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                                <option value="">Seleccionar pabellón...</option>
+                                <option value="Pabellón Alberto Arnal (Manises)">🏠 Pabellón Alberto Arnal (Manises) - LOCAL</option>
+                                <option value="Pabellón Municipal Picanya">🚗 Pabellón Municipal Picanya</option>
+                                <option value="Pabellón El Vedat (Torrent)">🚗 Pabellón El Vedat (Torrent)</option>
+                                <option value="Pabellón El Quint (Mislata)">🚗 Pabellón El Quint (Mislata)</option>
+                                <option value="Pabellón Badia Pedretera (Moncada)">🚗 Pabellón Badia Pedretera (Moncada)</option>
+                                <option value="Pabellón Benimaclet (Valencia)">🚗 Pabellón Benimaclet (Valencia)</option>
+                            </select>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Rival</label>
+                                <select id="editar-rival" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                                    <option value="">Seleccionar equipo...</option>
+                                    <option value="Picanya Bàsquet FuturPiso 10">Picanya Bàsquet FuturPiso 10</option>
+                                    <option value="Isolia NB Torrent B">Isolia NB Torrent B</option>
+                                    <option value="Mislata BC Verde">Mislata BC Verde</option>
+                                    <option value="CB Moncada A">CB Moncada A</option>
+                                    <option value="Picken MA A">Picken MA A</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Jornada</label>
+                                <input type="number" id="editar-jornada" required min="1" style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #f3f4f6; border-radius: 0.375rem;">
+                            <h4 style="font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.75rem;">Estado del Partido</h4>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="editar-finalizado" style="cursor: pointer;">
+                                    <span style="font-size: 0.875rem;">✅ Finalizado</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="editar-en-directo" style="cursor: pointer;">
+                                    <span style="font-size: 0.875rem;">🔴 En directo</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="editar-sin-acta" style="cursor: pointer;">
+                                    <span style="font-size: 0.875rem;">⚠️ Sin acta (incidencia)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Resultado Local (opcional)</label>
+                                <input type="text" id="editar-resultado-local" style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;" placeholder="Ej: 75">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Resultado Visitante (opcional)</label>
+                                <input type="text" id="editar-resultado-visitante" style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;" placeholder="Ej: 68">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Cuarto Actual (opcional)</label>
+                            <select id="editar-cuarto" style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                                <option value="">Ninguno</option>
+                                <option value="1º">1º Cuarto</option>
+                                <option value="2º">2º Cuarto</option>
+                                <option value="3º">3º Cuarto</option>
+                                <option value="4º">4º Cuarto</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                            <button type="button" id="btn-cancelar-editar" style="background: #6b7280; color: white; padding: 0.5rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600;">
+                                Cancelar
+                            </button>
+                            <button type="submit" style="background: #ea580c; color: white; padding: 0.5rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600;">
+                                💾 Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         `;
     }
@@ -970,6 +1201,15 @@ export class UIManager {
                     </div>
                 ` : ''}
 
+                ${(partido.anotaciones && partido.anotaciones.length > 0) || (partido.enDirecto && !partido.finalizado) ? `
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <button onclick="window.verAnotacionesGlobal('${partido.id}')" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 flex items-center justify-center gap-2">
+                            <span>📋</span>
+                            <span>Ver Anotaciones${partido.anotaciones && partido.anotaciones.length > 0 ? ` (${partido.anotaciones.length})` : ''}</span>
+                        </button>
+                    </div>
+                ` : ''}
+
                 ${isAdmin ? `
                     <div class="mt-4 flex gap-2 justify-center">
                         <button onclick="window.editarPartidoGlobal('${partido.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">✏️ Editar</button>
@@ -1292,6 +1532,9 @@ export class UIManager {
                             <!-- Se llenará con JavaScript -->
                         </div>
 
+                        <!-- Resumen de anotaciones (si existen) -->
+                        <div id="resumen-anotaciones-acta"></div>
+
                         <!-- Lista de jugadores añadidos -->
                         <div class="mb-4">
                             <div class="flex justify-between items-center mb-2">
@@ -1410,6 +1653,213 @@ export class UIManager {
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Muestra el resumen de anotaciones en el formulario de crear acta
+     * @param {Object} partido - Datos del partido
+     */
+    mostrarResumenAnotacionesEnActa(partido) {
+        const resumenContainer = document.getElementById('resumen-anotaciones-acta');
+        if (!resumenContainer) return;
+
+        const anotaciones = partido.anotaciones || [];
+
+        if (anotaciones.length === 0) {
+            resumenContainer.innerHTML = '';
+            return;
+        }
+
+        const resumen = this.app.anotacionesManager.generarResumenPorJugador(anotaciones);
+        const jugadoresOrdenados = Object.values(resumen).sort((a, b) => b.totalPuntos - a.totalPuntos);
+
+        resumenContainer.innerHTML = `
+            <div class="bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-300 rounded-lg p-4 mb-4">
+                <h5 class="font-bold text-purple-800 mb-3 text-lg flex items-center gap-2">
+                    <span>📊</span>
+                    <span>Anotaciones Registradas en Vivo</span>
+                </h5>
+                <p class="text-xs text-purple-700 mb-3 italic">
+                    Usa esta información como referencia para completar el acta oficial. Recuerda verificar los datos con el acta física.
+                </p>
+                <div class="space-y-2">
+                    ${jugadoresOrdenados.map(j => `
+                        <div class="bg-white border border-purple-200 rounded p-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-gray-800">${j.nombre}</span>
+                                <span class="bg-purple-600 text-white px-3 py-1 rounded-full font-bold text-sm">
+                                    ${j.totalPuntos} pts
+                                </span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-2">
+                                ${j.anotaciones.map(a => `+${a.puntos}${a.cuarto ? ` (${a.cuarto})` : ''}`).join(', ')}
+                            </div>
+                            <div class="text-sm font-semibold text-purple-700">
+                                → Sugerencia: ${this.app.anotacionesManager.generarSugerencia(j)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Muestra el modal selector de jugador para registrar anotación
+     * @param {string} partidoId - ID del partido
+     * @param {number} puntos - Puntos anotados (1, 2 o 3)
+     * @param {Object} partido - Datos del partido
+     */
+    mostrarSelectorJugador(partidoId, puntos, partido) {
+        // Obtener jugadores de las estadísticas (de actas anteriores) y ordenar por dorsal
+        const jugadores = Object.values(this.app.estadisticasManager.datosJugadores).sort((a, b) => {
+            const dorsalA = parseInt(a.dorsal) || 0;
+            const dorsalB = parseInt(b.dorsal) || 0;
+            return dorsalA - dorsalB;
+        });
+
+        // Crear modal con diseño grid amplio y sin scroll
+        const modalHTML = `
+            <div id="modal-selector-jugador" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
+                <div style="background: white; border-radius: 0.75rem; max-width: 800px; width: 100%; margin: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                    <div style="background: linear-gradient(to right, #ea580c, #f97316); color: white; padding: 1.5rem; border-radius: 0.75rem 0.75rem 0 0;">
+                        <h3 style="font-size: 1.5rem; font-weight: bold; margin: 0; text-align: center;">🏀 ¿Quién anotó +${puntos}?</h3>
+                    </div>
+
+                    <div style="padding: 2rem;">
+                        ${jugadores.length > 0 ? `
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+                                ${jugadores.map(j => `
+                                    <button
+                                        onclick="window.registrarAnotacionGlobal('${partidoId}', '${j.nombre}', ${puntos}, ${JSON.stringify(partido).replace(/"/g, '&quot;')}); document.getElementById('modal-selector-jugador').remove();"
+                                        style="padding: 1rem; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 0.5rem; cursor: pointer; text-align: center; font-weight: 600; color: #374151; transition: all 0.2s; font-size: 1rem;"
+                                        onmouseover="this.style.background='#ea580c'; this.style.color='white'; this.style.borderColor='#ea580c'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(234,88,12,0.3)';"
+                                        onmouseout="this.style.background='#f3f4f6'; this.style.color='#374151'; this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                                    >
+                                        <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">#${j.dorsal}</div>
+                                        <div style="font-size: 0.875rem;">${j.nombre}</div>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                                <p style="margin-bottom: 1rem; font-size: 1.125rem;">📋 No hay jugadores registrados aún.</p>
+                                <p style="font-size: 0.875rem;">Los jugadores aparecerán aquí después de crear la primera acta.</p>
+                            </div>
+                        `}
+
+                        <div style="display: flex; gap: 1rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+                            <button
+                                onclick="window.saltarAnotacionGlobal('${partidoId}', ${puntos}); document.getElementById('modal-selector-jugador').remove();"
+                                style="flex: 1; background: #6b7280; color: white; padding: 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; transition: background 0.2s;"
+                                onmouseover="this.style.background='#4b5563';"
+                                onmouseout="this.style.background='#6b7280';"
+                            >
+                                ⏭️ Saltar
+                            </button>
+                            <button
+                                onclick="document.getElementById('modal-selector-jugador').remove();"
+                                style="flex: 1; background: #ef4444; color: white; padding: 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; transition: background 0.2s;"
+                                onmouseover="this.style.background='#dc2626';"
+                                onmouseout="this.style.background='#ef4444';"
+                            >
+                                ✕ Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Agregar modal al body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Muestra el modal con todas las anotaciones del partido
+     * @param {Object} partido - Datos del partido
+     */
+    mostrarModalAnotaciones(partido) {
+        const anotaciones = partido.anotaciones || [];
+        const resumen = this.app.anotacionesManager.generarResumenPorJugador(anotaciones);
+        const jugadoresOrdenados = Object.values(resumen).sort((a, b) => b.totalPuntos - a.totalPuntos);
+
+        const modalHTML = `
+            <div id="modal-anotaciones" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
+                <div style="background: white; border-radius: 0.5rem; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="background: linear-gradient(to right, #ea580c, #f97316); color: white; padding: 1.5rem; border-radius: 0.5rem 0.5rem 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="font-size: 1.5rem; font-weight: bold; margin: 0;">📋 Anotaciones del Partido</h3>
+                        <button
+                            onclick="document.getElementById('modal-anotaciones').remove();"
+                            style="background: white; color: #ea580c; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: bold;"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div style="padding: 1.5rem;">
+                        ${anotaciones.length === 0 ? `
+                            <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">🏀</div>
+                                <p style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">No hay anotaciones registradas</p>
+                                <p style="font-size: 0.875rem;">Las anotaciones aparecerán aquí cuando se registren durante el partido.</p>
+                            </div>
+                        ` : `
+                            <!-- Resumen por Jugador -->
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="font-size: 1.125rem; font-weight: bold; color: #374151; margin-bottom: 1rem; border-bottom: 2px solid #ea580c; padding-bottom: 0.5rem;">
+                                    📊 Resumen por Jugador
+                                </h4>
+                                ${jugadoresOrdenados.map(j => `
+                                    <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.75rem; border-left: 4px solid #ea580c;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 700; color: #1f2937; font-size: 1.125rem;">${j.nombre}</span>
+                                            <span style="background: #ea580c; color: white; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: bold; font-size: 0.875rem;">
+                                                ${j.totalPuntos} pts
+                                            </span>
+                                        </div>
+                                        <div style="font-size: 0.875rem; color: #6b7280;">
+                                            ${j.anotaciones.map(a => `+${a.puntos}${a.cuarto ? ` (${a.cuarto})` : ''}`).join(', ')}
+                                        </div>
+                                        <div style="font-size: 0.875rem; color: #ea580c; font-weight: 600; margin-top: 0.5rem;">
+                                            → Sugerencia: ${this.app.anotacionesManager.generarSugerencia(j)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <!-- Lista Cronológica -->
+                            <div>
+                                <h4 style="font-size: 1.125rem; font-weight: bold; color: #374151; margin-bottom: 1rem; border-bottom: 2px solid #fb923c; padding-bottom: 0.5rem;">
+                                    🕐 Cronología
+                                </h4>
+                                <div style="max-height: 300px; overflow-y: auto;">
+                                    ${anotaciones.map(a => `
+                                        <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <span style="font-weight: 600; color: #1f2937;">${a.jugador}</span>
+                                                <span style="color: #ea580c; font-weight: bold; margin-left: 0.5rem;">+${a.puntos}</span>
+                                            </div>
+                                            ${a.cuarto ? `<span style="font-size: 0.75rem; color: #6b7280; background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${a.cuarto}</span>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `}
+
+                        <button
+                            onclick="document.getElementById('modal-anotaciones').remove();"
+                            style="width: 100%; margin-top: 1.5rem; background: #ea580c; color: white; padding: 0.75rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600;"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Agregar modal al body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 }
 

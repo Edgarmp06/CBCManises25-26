@@ -13,6 +13,7 @@ import { PartidosManager } from './partidos.js';
 import { ActasManager } from './actas.js';
 import { EstadisticasManager } from './estadisticas.js';
 import { AdminManager } from './admin.js';
+import { AnotacionesManager } from './anotaciones.js';
 import uiManager from './ui.js';
 
 /**
@@ -40,6 +41,8 @@ class CBCManisesApp {
         );
 
         this.estadisticasManager = new EstadisticasManager();
+
+        this.anotacionesManager = new AnotacionesManager(this.db);
 
         this.adminManager = new AdminManager(
             this.app,
@@ -264,7 +267,16 @@ window.eliminarPartidoGlobal = async (id) => {
 
 window.actualizarMarcadorGlobal = async (id, campo, incremento) => {
     try {
-        await app.partidosManager.actualizarMarcador(id, campo, incremento);
+        const partido = app.partidosManager.getPartidoById(id);
+
+        // Si es positivo y es el equipo local (CBC Manises), preguntar quién anotó
+        if (incremento > 0 && campo === 'resultadoLocal' && partido.esLocal) {
+            // Mostrar modal de selector de jugador
+            window.mostrarSelectorJugadorGlobal(id, incremento, partido);
+        } else {
+            // Solo actualizar el marcador
+            await app.partidosManager.actualizarMarcador(id, campo, incremento);
+        }
     } catch (error) {
         console.error('Error al actualizar marcador:', error);
     }
@@ -319,37 +331,8 @@ window.editarPartidoGlobal = (id) => {
         return;
     }
 
-    // Crear formulario de edición
-    const resultadoLocal = prompt('Resultado Local:', partido.resultadoLocal || '');
-    if (resultadoLocal === null) return; // Usuario canceló
-
-    const resultadoVisitante = prompt('Resultado Visitante:', partido.resultadoVisitante || '');
-    if (resultadoVisitante === null) return;
-
-    const finalizado = confirm('¿Marcar como finalizado?');
-    const enDirecto = finalizado ? false : confirm('¿Está en directo ahora?');
-
-    let cuartoActual = '';
-    if (enDirecto) {
-        cuartoActual = prompt('¿En qué cuarto está? (1Q, 2Q, 3Q, 4Q, DESC):', partido.cuartoActual || '1Q');
-    }
-
-    // Mantener todos los campos del partido original
-    const dataActualizada = {
-        fecha: partido.fecha,
-        hora: partido.hora,
-        rival: partido.rival,
-        esLocal: partido.esLocal,
-        ubicacion: partido.ubicacion,
-        jornada: partido.jornada,
-        resultadoLocal: resultadoLocal || '',
-        resultadoVisitante: resultadoVisitante || '',
-        finalizado,
-        enDirecto,
-        cuartoActual: cuartoActual || ''
-    };
-
-    window.actualizarPartidoGlobal(id, dataActualizada);
+    // Mostrar modal de edición
+    uiManager.mostrarModalEditarPartido(partido);
 };
 
 window.eliminarPartidoGlobal = async (id) => {
@@ -360,6 +343,47 @@ window.eliminarPartidoGlobal = async (id) => {
         } catch (error) {
             alert(`❌ Error: ${error.message}`);
         }
+    }
+};
+
+// === FUNCIONES DE ANOTACIONES ===
+window.mostrarSelectorJugadorGlobal = (partidoId, puntos, partido) => {
+    uiManager.mostrarSelectorJugador(partidoId, puntos, partido);
+};
+
+window.registrarAnotacionGlobal = async (partidoId, jugador, puntos, partido) => {
+    try {
+        // Registrar anotación
+        const anotacionesActuales = app.anotacionesManager.getAnotaciones(partido);
+        await app.anotacionesManager.añadirAnotacion(partidoId, {
+            jugador,
+            puntos,
+            cuarto: partido.cuartoActual || ''
+        }, anotacionesActuales);
+
+        // Actualizar marcador
+        await app.partidosManager.actualizarMarcador(partidoId, 'resultadoLocal', puntos);
+
+        console.log(`✅ Anotación registrada: +${puntos} de ${jugador}`);
+    } catch (error) {
+        console.error('❌ Error al registrar anotación:', error);
+        alert('Error al registrar la anotación');
+    }
+};
+
+window.saltarAnotacionGlobal = async (partidoId, puntos) => {
+    try {
+        // Solo actualizar marcador sin registrar jugador
+        await app.partidosManager.actualizarMarcador(partidoId, 'resultadoLocal', puntos);
+    } catch (error) {
+        console.error('❌ Error al actualizar marcador:', error);
+    }
+};
+
+window.verAnotacionesGlobal = (partidoId) => {
+    const partido = app.partidosManager.getPartidoById(partidoId);
+    if (partido) {
+        uiManager.mostrarModalAnotaciones(partido);
     }
 };
 
