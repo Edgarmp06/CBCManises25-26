@@ -1205,7 +1205,7 @@ export class UIManager {
                     <div class="mt-4 pt-4 border-t border-gray-200">
                         <button onclick="window.verAnotacionesGlobal('${partido.id}')" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 flex items-center justify-center gap-2">
                             <span>📋</span>
-                            <span>Ver Anotaciones${partido.anotaciones && partido.anotaciones.length > 0 ? ` (${partido.anotaciones.length})` : ''}</span>
+                            <span>Ver Anotaciones(son en directo y son orientativas, ver acta para confirmar datos)${partido.anotaciones && partido.anotaciones.length > 0 ? ` (${partido.anotaciones.length})` : ''}</span>
                         </button>
                     </div>
                 ` : ''}
