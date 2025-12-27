@@ -6,39 +6,64 @@ Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 
 
 ### ✅ Implementado
 
-- 📅 **Calendario de partidos** - Todos los partidos de la temporada
+- 📅 **Calendario de partidos** - Todos los partidos de la temporada con filtros por fase
 - 🔴 **Marcadores en directo** - Seguimiento en tiempo real durante los partidos
 - 📝 **Anotaciones en vivo** - Sistema opcional para registrar anotadores durante el partido
   - Selector de jugador al anotar puntos (+1, +2, +3)
   - Visualización pública de anotaciones
   - Resumen organizado por jugador con sugerencias para el acta
   - Opción de saltar registro si no se desea usar
-- 🏆 **Resultados** - Historial completo de partidos finalizados
+- 🏆 **Resultados** - Historial completo de partidos finalizados con filtros por fase
 - 📊 **Actas oficiales** - Estadísticas detalladas de cada jugador por partido
+  - Gestión completa de actas (crear, editar, eliminar)
+  - Editor intuitivo con validaciones
+  - Visualización con estadísticas calculadas
+  - Panel de gestión de actas para administrador
 - 📈 **Gráficas de estadísticas** - Visualización de evolución del equipo e individual
   - Estadísticas del equipo por jornada (puntos, faltas, tiros, % TL)
   - Estadísticas individuales por jugador (% TL, puntos T2/T3, faltas)
   - Selector de jugador con resumen de totales
   - Gráficas interactivas con Chart.js
+  - Filtros por fase (1ª, 2ª, todas)
+- 🏅 **Clasificación de la liga** - Tabla de posiciones del Grupo D
+  - Visualización completa de 1ª fase con todas las columnas (J, V, P, NP, PF, PC, Dif., PTS)
+  - Resaltado de CBC Manises-Quart
+  - Diferencia de puntos con colores (verde/rojo)
+  - Placeholder para 2ª fase (enero 2026)
 - 📱 **Diseño responsive** - Optimizado para móvil, tablet y escritorio
 - ⚡ **Rendimiento excelente** - 99/100 en PageSpeed Insights (móvil y desktop)
 - 💬 **Canal de WhatsApp** - Botón directo para unirse al canal oficial
-- 🔐 **Panel de administración** - Gestión completa de partidos, actas y estadísticas
+- 🔐 **Panel de administración** - Gestión completa
+  - Crear/editar/eliminar partidos
+  - Crear/editar/eliminar actas
+  - Visualización de logs de cambios
+  - Tabla de gestión de actas con delete buttons
 - 🎨 **Galería de fotos** - Fondo rotativo con imágenes del equipo
-- ✏️ **Edición de partidos** - Modal intuitivo para editar partidos desde cualquier vista
+- ✏️ **Edición intuitiva** - Modales para editar partidos desde cualquier vista
+- 🔄 **Filtro de fases** - Sistema completo de filtrado por 1ª/2ª fase en todas las vistas
+  - Calendario: filtrado automático por fase
+  - Resultados: filtrado por fase
+  - Estadísticas: gráficas filtradas por fase
+  - Almacenamiento en localStorage
 
-### 🚀 Próximamente
+### 🔧 Mejoras Recientes (Última sesión)
 
-- 🏅 **Clasificación de la liga** (próxima funcionalidad - 4 votos en encuesta)
+- ✅ Sistema de fases implementado (1ª/2ª fase con filtrado completo)
+- ✅ Bug de marcador corregido (puntos a equipos correctos)
+- ✅ Selector de jugadores mejorado (obtiene de todas las actas, dorsales siempre correctos)
+- ✅ Gestión de actas mejorada (delete functionality, confirmación)
+- ✅ Tab de clasificación completamente funcional
+- ✅ Interfaz mejorada con botones responsive
 
 ## 🛠️ Tecnologías
 
-- **Frontend**: HTML, JavaScript ES6 Modules, Tailwind CSS
+- **Frontend**: HTML5, JavaScript ES6 Modules, Tailwind CSS 3
 - **Gráficas**: Chart.js 4.4.0
-- **Backend**: Firebase Firestore
+- **Backend**: Firebase Firestore (base de datos en tiempo real)
 - **Autenticación**: Firebase Auth
-- **Hosting**: Vercel
+- **Hosting**: Vercel con CI/CD automático
 - **Analytics**: Vercel Analytics + Speed Insights
+- **Arquitectura**: Clean Architecture (5 capas)
 
 ## 📁 Estructura del Proyecto
 
@@ -46,58 +71,167 @@ Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 
 web_balonmcesto/
 ├── index.html              # Página principal
 ├── css/
-│   └── styles.css          # Estilos personalizados
+│   └── styles.css          # Estilos personalizados (complementa Tailwind)
 ├── js/
-│   ├── config.js           # Configuración Firebase y constantes
-│   ├── partidos.js         # Gestión de partidos
-│   ├── actas.js            # Gestión de actas
-│   ├── estadisticas.js     # Procesamiento de estadísticas y gráficas
-│   ├── admin.js            # Panel de administración
+│   ├── config.js           # Configuración Firebase y ubicaciones
+│   ├── constants.js        # Constantes globales (TABS, JUGADORES, CLASIFICACION, etc.)
+│   ├── partidos.js         # Gestor de partidos (CRUD + listeners)
+│   ├── actas.js            # Gestor de actas oficiales (CRUD + listeners)
+│   ├── estadisticas.js     # Procesamiento de datos y generación de gráficas
+│   ├── admin.js            # Panel de administración y autenticación
 │   ├── anotaciones.js      # Sistema de anotaciones en vivo
-│   ├── ui.js               # Gestión de interfaz y modales
-│   ├── app.js              # Archivo principal (punto de entrada)
-│   ├── utils.js            # Funciones auxiliares
-│   ├── eventBus.js         # Sistema de eventos
-│   └── constants.js        # Constantes de la aplicación
-├── imagenes/               # Imágenes de fondo del equipo
-├── logos/                  # Logos de equipos rivales
+│   ├── ui.js               # Gestión de interfaz (2000+ líneas, todas las vistas)
+│   ├── app.js              # Orquestador principal y punto de entrada
+│   ├── utils.js            # Funciones auxiliares (formateo, validación)
+│   ├── eventBus.js         # Sistema de eventos (comunicación entre módulos)
+│   └── constants.js        # Constantes (TABS, CLASIFICACION, JUGADORES_EQUIPO, etc.)
+├── imagenes/               # Imágenes de fondo rotativo (6 imágenes)
+├── logos/                  # Logos de equipos rivales (6 equipos)
 ├── .gitignore              # Archivos ignorados por Git
 ├── robots.txt              # Configuración SEO para crawlers
 ├── sitemap.xml             # Mapa del sitio para SEO
-├── CLEAN_ARCHITECTURE.md   # Documentación de arquitectura
+├── CLEAN_ARCHITECTURE.md   # Documentación detallada de arquitectura
+├── loaderio-*.txt          # Token de verificación de carga
 └── README.md               # Este archivo
 ```
 
-### 🏗️ Arquitectura de la Aplicación
+## 🏗️ Arquitectura de la Aplicación
 
-- **HTML estático**: Sin frameworks, solo vanilla JavaScript ES6 Modules
-- **Modularización**: Cada funcionalidad en su propio módulo JS
-- **Firebase**: Base de datos en tiempo real sin servidor backend
-- **Despliegue**: GitHub → Vercel (automático en cada push)
+### Patrón: Clean Architecture (5 capas)
 
-## 📊 Estadísticas (19 de noviembre de 2025)
+```
+1. PRESENTATION (ui.js)
+   ↓ (eventos DOM)
+2. APPLICATION (app.js)
+   ↓ (orquestación)
+3. DOMAIN (partidos.js, actas.js, etc.)
+   ↓ (lógica de negocio)
+4. INFRASTRUCTURE (firebase)
+   ↓ (persistencia)
+5. UTILITIES (utils.js, constants.js)
+```
 
-### Rendimiento
-- **PageSpeed Insights**:
-  - 🚀 Móvil: **99/100**
-  - 🖥️ Desktop: **99/100**
-- **Test de carga**: ✅ Soporta 10,000 usuarios simultáneos
+### Características arquitectónicas:
 
-### Engagement (últimos 7 días)
-- **Visitantes únicos**: 34
-- **Páginas vistas**: 56
-- **Bounce Rate**: 71%
-- **Seguidores del canal WhatsApp**: 22 personas
+- **Modularización ES6**: Cada archivo es un módulo independiente
+- **Singleton pattern**: UIManager y app como instancias únicas
+- **Listeners en tiempo real**: Firebase onSnapshot para actualizaciones automáticas
+- **Separación de responsabilidades**: UI ≠ Lógica ≠ Datos
+- **Sin frameworks**: Vanilla JS puro para máxima ligereza (< 100KB total)
 
-### Contenido
-- **Actas subidas**: Múltiples partidos con estadísticas completas
-- **Gráficas generadas**: Dinámicas en tiempo real
-- **Anotaciones registradas**: Sistema activo y funcionando
+## 🎯 Flujo de Datos
+
+```
+Firebase (Firestore)
+    ↓ (onSnapshot listeners)
+Managers (Partidos, Actas, Estadísticas, Admin)
+    ↓ (procesamiento)
+App.js (orquestación)
+    ↓ (cambios de estado)
+UIManager (generación HTML)
+    ↓ (renderizado)
+DOM (interfaz usuario)
+```
+
+## 📊 Contenido Actual
+
+### Clasificación Grupo D - 1ª Fase
+| Pos | Equipo | J | V | P | PF | PC | PTS |
+|-----|--------|---|---|---|----|----|-----|
+| 1 | PICKEN MA A | 10 | 10 | 0 | 715 | 352 | 20 |
+| 2 | PICANYA BASQUET | 10 | 6 | 4 | 627 | 606 | 16 |
+| 3 | CB MONCADA "A" | 10 | 5 | 5 | 587 | 640 | 15 |
+| 4 | ISOLIA NB TORRENT B | 10 | 4 | 6 | 567 | 630 | 14 |
+| 5 | **CBC MANISES-QUART** | 10 | 4 | 6 | 625 | 687 | 14 |
+| 6 | MISLATA BC VERDE | 10 | 1 | 9 | 390 | 596 | 11 |
+
+### Plantilla de Jugadores
+- 11 jugadores en plantilla oficial
+- Dorsales: 0, 7, 9, 31, 33, 37, 43, 45, 55, 91, 96
+- Sistema de actualización de estadísticas por acta
 
 ## 🔗 Enlaces
 
 - **Web**: [cbc-manises.vercel.app](https://cbc-manises.vercel.app)
 - **Canal WhatsApp**: [Únete aquí](https://whatsapp.com/channel/0029VbBc5Eh4SpkD0kfaV93T)
+- **Instagram**: [Síguenos](https://instagram.com/edgarmp06)
+
+## 📈 Estadísticas de Rendimiento
+
+### Velocidad (PageSpeed Insights)
+- 🚀 **Móvil**: 99/100
+- 🖥️ **Desktop**: 99/100
+
+### Capacidad
+- ✅ Soporta 10,000+ usuarios simultáneos
+- ✅ Tiempo de carga < 1 segundo
+- ✅ Optimizado para conexiones lentas
+
+### Engagement
+- 📱 Totalmente responsive
+- 💬 Integración WhatsApp
+- 📊 Analytics integrado
+
+## 🚀 Deployment
+
+### Desde GitHub
+```bash
+git push origin main
+```
+→ Se despliega automáticamente en Vercel
+
+### Variables de entorno necesarias
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+## 👨‍💻 Desarrollo
+
+### Requerimientos
+- Node.js 14+
+- npm o yarn
+- Navegador moderno (Chrome, Firefox, Safari, Edge)
+
+### Setup Local
+```bash
+# 1. Clonar repositorio
+git clone <repo-url>
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Configurar Firebase
+# Actualizar js/config.js con tus credenciales
+
+# 4. Iniciar servidor
+npm start
+
+# 5. Abrir en navegador
+# http://localhost:3000
+```
+
+## 📝 Notas de Desarrollo
+
+### Convenciones de Código
+- **Comentarios JSDoc**: Cada función documentada
+- **Nombres descriptivos**: Variables y funciones en español para claridad
+- **Funciones globales**: Expuestas en `window` para acceso desde HTML
+- **Console.logs**: Incluidos para debugging con emojis
+
+### Testing Manual
+- Probar en móvil: `npm run build && serve -s dist`
+- Verificar rendimiento: PageSpeed Insights
+- Comprobar BD: Firebase Console
+
+## 📄 Licencia
+
+Proyecto educativo para CBC Manises-Quart
+Temporada 2025/26
 - **Instagram**: [@edgarmp06](https://instagram.com/edgarmp06)
 - **Email**: cbcmanisesweb@gmail.com
 
