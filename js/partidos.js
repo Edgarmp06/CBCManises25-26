@@ -175,7 +175,8 @@ export class PartidosManager {
             resultadoLocal: data.resultadoLocal || '',
             resultadoVisitante: data.resultadoVisitante || '',
             enDirecto: data.enDirecto || false,
-            cuartoActual: data.cuartoActual || ''
+            cuartoActual: data.cuartoActual || '',
+            fase: data.fase || 'primera'
         };
 
         console.log('💾 Datos a guardar en Firebase:', partidoData);
@@ -217,7 +218,8 @@ export class PartidosManager {
             resultadoLocal: data.resultadoLocal || '',
             resultadoVisitante: data.resultadoVisitante || '',
             enDirecto: data.enDirecto || false,
-            cuartoActual: data.cuartoActual || ''
+            cuartoActual: data.cuartoActual || '',
+            fase: data.fase || 'primera'
         };
 
         try {

@@ -8,7 +8,8 @@
 export const TABS = {
     CALENDARIO: 'calendario',
     RESULTADOS: 'resultados',
-    ESTADISTICAS: 'estadisticas'
+    ESTADISTICAS: 'estadisticas',
+    CLASIFICACION: 'clasificacion'
 };
 
 // === ESTADOS DE PARTIDOS ===
@@ -157,10 +158,10 @@ export const JUGADORES_EQUIPO = [
     { dorsal: '9', nombre: 'HÉCTOR POQUET LIRON' },
     { dorsal: '31', nombre: 'DARIO MEROÑO PALOMO' },
     { dorsal: '33', nombre: 'DANIEL DÍAZ FOLGADO' },
+    { dorsal: '37', nombre: 'VICTOR ARDID HERRERO' },
     { dorsal: '43', nombre: 'MARC LUCENA ALIAGA' },
     { dorsal: '45', nombre: 'GUILLEM RUIZ SOLER' },
     { dorsal: '55', nombre: 'RUBEN GIL MUÑOZ' },
-    { dorsal: '80', nombre: 'VICTOR ARDID HERRERO' },
     { dorsal: '91', nombre: 'RAUL RUIZ ROCHINA' },
     { dorsal: '96', nombre: 'RAUL GIL MUÑOZ' },
     // Añade más jugadores según sea necesario
@@ -253,6 +254,18 @@ export const ANIMACIONES = {
     EASE_OUT: 'ease-out'
 };
 
+// === CLASIFICACIÓN DEL GRUPO D ===
+export const CLASIFICACION_PRIMERA_FASE = [
+    { pos: 1, equipo: 'PICKEN MA A', j: 10, v: 10, p: 0, np: 0, pf: 715, pc: 352, pts: 20 },
+    { pos: 2, equipo: 'PICANYA BASQUET FUTURPISO 10', j: 10, v: 6, p: 4, np: 0, pf: 627, pc: 606, pts: 16 },
+    { pos: 3, equipo: 'CB MONCADA "A"', j: 10, v: 5, p: 5, np: 0, pf: 587, pc: 640, pts: 15 },
+    { pos: 4, equipo: 'ISOLIA NB TORRENT B', j: 10, v: 4, p: 6, np: 0, pf: 567, pc: 630, pts: 14 },
+    { pos: 5, equipo: 'CRISCOLOR C.B.C MANISES-QUART', j: 10, v: 4, p: 6, np: 0, pf: 625, pc: 687, pts: 14 },
+    { pos: 6, equipo: 'MISLATA BC VERDE', j: 10, v: 1, p: 9, np: 0, pf: 390, pc: 596, pts: 11 }
+];
+
+export const CLASIFICACION_SEGUNDA_FASE = [];
+
 // Exportar objeto con todas las constantes
 export default {
     TABS,
@@ -278,5 +291,7 @@ export default {
     STORAGE_KEYS,
     EVENTOS,
     BREAKPOINTS,
-    ANIMACIONES
+    ANIMACIONES,
+    CLASIFICACION_PRIMERA_FASE,
+    CLASIFICACION_SEGUNDA_FASE
 };

@@ -263,6 +263,7 @@ export class ActasManager {
             resultadoLocal: partido.resultadoLocal,
             resultadoVisitante: partido.resultadoVisitante,
             jornada: partido.jornada,
+            fase: partido.fase || 'primera',
             jugadores: jugadoresProcesados
         };
 
@@ -293,7 +294,8 @@ export class ActasManager {
             jugadores: jugadoresProcesados,
             // Actualizar también datos del partido por si cambiaron
             resultadoLocal: partido.resultadoLocal,
-            resultadoVisitante: partido.resultadoVisitante
+            resultadoVisitante: partido.resultadoVisitante,
+            fase: partido.fase || 'primera'
         };
 
         try {

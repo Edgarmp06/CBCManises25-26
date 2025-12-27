@@ -6,7 +6,7 @@
  */
 
 import { formatearFecha, formatearFechaCorta } from './utils.js';
-import { INFO_EQUIPO, URLS, JUGADORES_EQUIPO } from './constants.js';
+import { INFO_EQUIPO, URLS, JUGADORES_EQUIPO, CLASIFICACION_PRIMERA_FASE, CLASIFICACION_SEGUNDA_FASE } from './constants.js';
 import { UBICACIONES } from './config.js';
 
 /**
@@ -88,6 +88,7 @@ export class UIManager {
                     esLocal: esLocal,
                     ubicacion: ubicacionSeleccionada,
                     jornada: document.getElementById('jornada').value,
+                    fase: document.getElementById('fase').value || 'primera',
                     finalizado: false,
                     enDirecto: false,
                     resultadoLocal: '',
@@ -454,6 +455,7 @@ export class UIManager {
                     esLocal: esLocal,
                     ubicacion: ubicacionSeleccionada,
                     jornada: document.getElementById('editar-jornada').value,
+                    fase: document.getElementById('editar-fase').value || 'primera',
                     finalizado: document.getElementById('editar-finalizado').checked,
                     enDirecto: document.getElementById('editar-en-directo').checked,
                     resultadoLocal: resultadoLocalValue,
@@ -496,6 +498,7 @@ export class UIManager {
         document.getElementById('editar-rival').value = partido.rival;
         document.getElementById('editar-ubicacion').value = partido.ubicacion;
         document.getElementById('editar-jornada').value = partido.jornada;
+        document.getElementById('editar-fase').value = partido.fase || 'primera';
         document.getElementById('editar-finalizado').checked = partido.finalizado || false;
         document.getElementById('editar-en-directo').checked = partido.enDirecto || false;
         document.getElementById('editar-resultado-local').value = partido.resultadoLocal || '';
@@ -629,6 +632,14 @@ export class UIManager {
                                 <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Jornada</label>
                                 <input type="number" id="editar-jornada" required min="1" style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
                             </div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Fase</label>
+                            <select id="editar-fase" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                                <option value="primera">🟡 Primera Fase</option>
+                                <option value="segunda">🔵 Segunda Fase</option>
+                            </select>
                         </div>
 
                         <div style="margin-bottom: 1rem; padding: 1rem; background: #f3f4f6; border-radius: 0.375rem;">
@@ -818,8 +829,17 @@ export class UIManager {
                 return new Date(a.fecha) - new Date(b.fecha);
             });
 
+        // Obtener el filtro actual de fase
+        const filtroFaseActual = this.app.estadisticasManager.getFiltroFase();
+        
         const partidosFinalizados = partidos
             .filter(p => p.finalizado)
+            .filter(p => {
+                // Si el filtro es 'todas', mostrar todo
+                if (filtroFaseActual === 'todas') return true;
+                // Si no, filtrar por la fase del partido (default 'primera' si no existe)
+                return (p.fase || 'primera') === filtroFaseActual;
+            })
             .sort((a, b) => {
                 if (a.jornada && b.jornada) {
                     const jornadaA = parseInt(a.jornada);
@@ -862,12 +882,23 @@ export class UIManager {
                 >
                     📊<span class="hidden xs:inline sm:hidden"> </span><span class="hidden sm:inline"> Estadísticas</span><span class="sm:hidden xs:inline">Est</span>
                 </button>
+                <button
+                    onclick="window.cambiarTab('clasificacion')"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${
+                        activeTab === 'clasificacion'
+                            ? 'bg-orange-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }"
+                >
+                    🏅<span class="hidden xs:inline sm:hidden"> </span><span class="hidden sm:inline"> Clasificación</span><span class="sm:hidden xs:inline">Clas</span>
+                </button>
             </div>
 
             <!-- Contenido de la tab activa -->
             ${activeTab === 'calendario' ? this.generarTabCalendario(partidosCalendario, actas, estado.isAdmin) : ''}
             ${activeTab === 'resultados' ? this.generarTabResultados(partidosFinalizados, actas, estado.isAdmin) : ''}
             ${activeTab === 'estadisticas' ? this.generarTabEstadisticas(actas, datosJugadores, jugadorSeleccionado) : ''}
+            ${activeTab === 'clasificacion' ? this.generarTabClasificacion() : ''}
         `;
     }
 
@@ -905,19 +936,64 @@ export class UIManager {
      * @returns {string} HTML de la tab resultados
      */
     generarTabResultados(partidos, actas, isAdmin) {
+        const filtroActual = this.app.estadisticasManager.getFiltroFase();
+        
+        // Los botones de filtro SIEMPRE se muestran
+        const botonesHeader = `
+            <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">🏆 Resultados</h3>
+
+            <!-- Filtros por fase -->
+            <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+                <p class="text-sm font-bold text-gray-700 mb-3">Filtrar por fase:</p>
+                <div class="flex flex-wrap gap-2">
+                    <button 
+                        onclick="window.cambiarFiltroFaseGlobal('todas')" 
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'todas' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        📊 Temporada Completa
+                    </button>
+                    <button 
+                        onclick="window.cambiarFiltroFaseGlobal('primera')" 
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'primera' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        🟡 1ª Fase
+                    </button>
+                    <button 
+                        onclick="window.cambiarFiltroFaseGlobal('segunda')" 
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'segunda' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        🔵 2ª Fase
+                    </button>
+                </div>
+            </div>
+        `;
+
         if (partidos.length === 0) {
             return `
-                <div class="bg-white rounded-lg shadow-md p-8 text-center">
-                    <div class="text-6xl mb-4">🏆</div>
-                    <h3 class="text-xl font-bold text-gray-700 mb-2">No hay resultados aún</h3>
-                    <p class="text-gray-500">Los resultados aparecerán aquí una vez finalizados los partidos</p>
+                <div>
+                    ${botonesHeader}
+                    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                        <div class="text-6xl mb-4">🏆</div>
+                        <h3 class="text-xl font-bold text-gray-700 mb-2">
+                            ${filtroActual === 'todas' ? 'No hay resultados aún' : `No hay resultados de ${filtroActual === 'primera' ? '1ª Fase' : '2ª Fase'}`}
+                        </h3>
+                        <p class="text-gray-500 mb-4">
+                            ${filtroActual === 'todas' 
+                                ? 'Los resultados aparecerán aquí una vez finalizados los partidos'
+                                : `No hay partidos de ${filtroActual === 'primera' ? '1ª Fase' : '2ª Fase'} todavía.`}
+                        </p>
+                        ${filtroActual !== 'todas' ? `
+                            <button 
+                                onclick="window.cambiarFiltroFaseGlobal('todas')" 
+                                class="mt-4 bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-all">
+                                Ver Temporada Completa
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
             `;
         }
 
         return `
             <div>
-                <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">🏆 Resultados</h3>
+                ${botonesHeader}
                 ${partidos.map(p => this.generarPartidoCard(p, actas, isAdmin)).join('')}
             </div>
         `;
@@ -931,12 +1007,43 @@ export class UIManager {
      * @returns {string} HTML de la tab estadísticas
      */
     generarTabEstadisticas(actas, datosJugadores, jugadorSeleccionado) {
+        const filtroActual = this.app.estadisticasManager.getFiltroFase();
+
+        // Botones de filtro - SIEMPRE se muestran
+        const botonesFilter = `
+            <!-- Filtros por fase -->
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <p class="text-sm font-bold text-gray-700 mb-3">Filtrar por fase:</p>
+                <div class="flex flex-wrap gap-2">
+                    <button 
+                        onclick="window.cambiarFiltroFaseGlobal('todas')" 
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'todas' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        📊 Temporada Completa
+                    </button>
+                    <button 
+                        onclick="window.cambiarFiltroFaseGlobal('primera')" 
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'primera' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        🟡 1ª Fase
+                    </button>
+                    <button 
+                        onclick="window.cambiarFiltroFaseGlobal('segunda')" 
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'segunda' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        🔵 2ª Fase
+                    </button>
+                </div>
+            </div>
+        `;
+
         if (!actas || actas.length === 0) {
             return `
-                <div class="bg-white rounded-lg shadow-md p-8 text-center">
-                    <div class="text-6xl mb-4">📊</div>
-                    <h3 class="text-xl font-bold text-gray-700 mb-2">No hay estadísticas disponibles</h3>
-                    <p class="text-gray-500">Las estadísticas aparecerán cuando se registren las actas de los partidos</p>
+                <div class="space-y-6">
+                    <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">📊 Estadísticas de la Temporada</h3>
+                    ${botonesFilter}
+                    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                        <div class="text-6xl mb-4">📊</div>
+                        <h3 class="text-xl font-bold text-gray-700 mb-2">No hay estadísticas disponibles</h3>
+                        <p class="text-gray-500">Las estadísticas aparecerán cuando se registren las actas de los partidos</p>
+                    </div>
                 </div>
             `;
         }
@@ -946,6 +1053,8 @@ export class UIManager {
         return `
             <div class="space-y-6">
                 <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">📊 Estadísticas de la Temporada</h3>
+
+                ${botonesFilter}
 
                 <!-- Gráficas del equipo -->
                 <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
@@ -1032,6 +1141,14 @@ export class UIManager {
                     <div class="text-center mb-4">
                         <span class="bg-orange-500 text-white px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold">
                             Jornada ${partido.jornada}
+                        </span>
+                    </div>
+                ` : ''}
+
+                ${partido.fase ? `
+                    <div class="text-center mb-2">
+                        <span class="text-xs font-semibold px-2 py-1 rounded ${partido.fase === 'primera' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
+                            ${partido.fase === 'primera' ? '🟡 1ª Fase' : '🔵 2ª Fase'}
                         </span>
                     </div>
                 ` : ''}
@@ -1201,13 +1318,15 @@ export class UIManager {
                     </div>
                 ` : ''}
 
-                ${(partido.anotaciones && partido.anotaciones.length > 0) || (partido.enDirecto && !partido.finalizado) ? `
+                ${(partido.anotaciones && partido.anotaciones.length > 0) ? `
                     <div class="mt-4 pt-4 border-t border-gray-200">
-                        <button onclick="window.verAnotacionesGlobal('${partido.id}')" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 flex items-center justify-center gap-2">
-                            <span>📋</span>
-                            <span>Ver Anotaciones (Datos NO Oficiales)${partido.anotaciones && partido.anotaciones.length > 0 ? ` (${partido.anotaciones.length})` : ''}
-                            </span>
-                        </button>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="window.verAnotacionesGlobal('${partido.id}')" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 flex items-center justify-center gap-2">
+                                <span>📋</span>
+                                <span>Ver Anotaciones (Datos NO Oficiales)${partido.anotaciones && partido.anotaciones.length > 0 ? ` (${partido.anotaciones.length})` : ''}
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 ` : ''}
 
@@ -1504,6 +1623,13 @@ export class UIManager {
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jornada</label>
                             <input type="number" id="jornada" required min="1" class="w-full border rounded px-3 py-2">
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fase</label>
+                            <select id="fase" required class="w-full border rounded px-3 py-2">
+                                <option value="primera">🟡 Primera Fase</option>
+                                <option value="segunda">🔵 Segunda Fase</option>
+                            </select>
+                        </div>
                         <div class="md:col-span-2">
                             <button type="submit" class="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700">
                                 ➕ Añadir Partido
@@ -1652,6 +1778,48 @@ export class UIManager {
                         </table>
                     </div>
                 </div>
+
+                <hr class="my-8">
+
+                <!-- Gestión de Actas -->
+                <div>
+                    <h4 class="text-xl font-semibold text-orange-600 mb-4">📋 Gestión de Actas</h4>
+                    ${estado.actas && estado.actas.length > 0 ? `
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-2 border text-left">Jornada</th>
+                                        <th class="px-4 py-2 border text-left">Rival</th>
+                                        <th class="px-4 py-2 border text-left">Resultado</th>
+                                        <th class="px-4 py-2 border text-left">Fase</th>
+                                        <th class="px-4 py-2 border text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${estado.actas.map(a => {
+                                        const partido = partidos.find(p => p.id === a.partidoId);
+                                        return `
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="px-4 py-2 border">${a.jornada || '-'}</td>
+                                                <td class="px-4 py-2 border">${partido?.rival || 'Desconocido'}</td>
+                                                <td class="px-4 py-2 border text-center">${a.resultadoLocal}-${a.resultadoVisitante}</td>
+                                                <td class="px-4 py-2 border text-center">${a.fase === 'segunda' ? '🔵 2ª Fase' : '🟡 1ª Fase'}</td>
+                                                <td class="px-4 py-2 border text-center">
+                                                    <button onclick="if(confirm('¿Estás seguro de que quieres eliminar esta acta?')) window.eliminarActaGlobal('${a.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                                                        🗑️ Eliminar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : `
+                        <p class="text-gray-500 italic">No hay actas registradas aún.</p>
+                    `}
+                </div>
             </div>
         `;
     }
@@ -1711,9 +1879,9 @@ export class UIManager {
      * @param {number} puntos - Puntos anotados (1, 2 o 3)
      * @param {Object} partido - Datos del partido
      */
-    mostrarSelectorJugador(partidoId, puntos, partido) {
-        // Obtener jugadores de las estadísticas (de actas anteriores) y ordenar por dorsal
-        const jugadores = Object.values(this.app.estadisticasManager.datosJugadores).sort((a, b) => {
+    mostrarSelectorJugador(partidoId, puntos, partido, campo) {
+        // Obtener jugadores de la plantilla oficial (dorsales siempre correctos)
+        const jugadores = [...this.app.estadisticasManager.jugadores].sort((a, b) => {
             const dorsalA = parseInt(a.dorsal) || 0;
             const dorsalB = parseInt(b.dorsal) || 0;
             return dorsalA - dorsalB;
@@ -1732,7 +1900,7 @@ export class UIManager {
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
                                 ${jugadores.map(j => `
                                     <button
-                                        onclick="window.registrarAnotacionGlobal('${partidoId}', '${j.nombre}', ${puntos}, ${JSON.stringify(partido).replace(/"/g, '&quot;')}); document.getElementById('modal-selector-jugador').remove();"
+                                        onclick="window.registrarAnotacionGlobal('${partidoId}', '${j.nombre}', ${puntos}, ${JSON.stringify(partido).replace(/"/g, '&quot;')}, '${campo}'); document.getElementById('modal-selector-jugador').remove();"
                                         style="padding: 1rem; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 0.5rem; cursor: pointer; text-align: center; font-weight: 600; color: #374151; transition: all 0.2s; font-size: 1rem;"
                                         onmouseover="this.style.background='#ea580c'; this.style.color='white'; this.style.borderColor='#ea580c'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(234,88,12,0.3)';"
                                         onmouseout="this.style.background='#f3f4f6'; this.style.color='#374151'; this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none';"
@@ -1751,7 +1919,7 @@ export class UIManager {
 
                         <div style="display: flex; gap: 1rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
                             <button
-                                onclick="window.saltarAnotacionGlobal('${partidoId}', ${puntos}); document.getElementById('modal-selector-jugador').remove();"
+                                onclick="window.saltarAnotacionGlobal('${partidoId}', ${puntos}, '${campo}'); document.getElementById('modal-selector-jugador').remove();"
                                 style="flex: 1; background: #6b7280; color: white; padding: 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; transition: background 0.2s;"
                                 onmouseover="this.style.background='#4b5563';"
                                 onmouseout="this.style.background='#6b7280';"
@@ -1861,6 +2029,135 @@ export class UIManager {
 
         // Agregar modal al body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Genera la tab de clasificación
+     * @returns {string} HTML de la tab clasificación
+     */
+    generarTabClasificacion() {
+        const filtroFase = this.app.estadisticasManager.getFiltroFase();
+
+        return `
+            <!-- Sub-pestañas de fases -->
+            <div class="bg-white rounded-lg shadow-md mb-6 p-2 flex gap-2">
+                <button
+                    onclick="window.cambiarFaseClasificacion('primera')"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-sm md:text-base font-semibold transition-colors ${
+                        filtroFase === 'primera' || filtroFase === 'todas'
+                            ? 'bg-yellow-400 text-gray-800'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }"
+                >
+                    🟡 1ª Fase
+                </button>
+                <button
+                    onclick="window.cambiarFaseClasificacion('segunda')"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-sm md:text-base font-semibold transition-colors ${
+                        filtroFase === 'segunda'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }"
+                >
+                    🔵 2ª Fase
+                </button>
+            </div>
+
+            <!-- Contenido de clasificación -->
+            ${this.mostrarClasificacion(filtroFase)}
+        `;
+    }
+
+    /**
+     * Muestra la tabla de clasificación según la fase
+     * @param {string} fase - Fase a mostrar
+     * @returns {string} HTML de la clasificación
+     */
+    mostrarClasificacion(fase) {
+        if (fase === 'segunda') {
+            return `
+                <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                    <h3 class="text-2xl font-bold text-blue-600 mb-4">🔵 2ª Fase</h3>
+                    <p class="text-gray-600 text-lg mb-4">
+                        La clasificación de 2ª fase estará disponible cuando comience la competición en enero de 2026.
+                    </p>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                        <p class="text-gray-700">
+                            ⏱️ Sigue nuestras redes sociales para estar al tanto del inicio de la segunda fase.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Primera fase o todas
+        const clasificacion = CLASIFICACION_PRIMERA_FASE;
+
+        return `
+            <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+                <table class="w-full text-sm md:text-base">
+                    <thead>
+                        <tr class="bg-orange-500 text-white">
+                            <th class="px-2 md:px-4 py-3 text-left font-bold">#</th>
+                            <th class="px-2 md:px-4 py-3 text-left font-bold">Equipo</th>
+                            <th class="px-2 md:px-4 py-3 text-center font-bold">J</th>
+                            <th class="px-2 md:px-4 py-3 text-center font-bold">V</th>
+                            <th class="px-2 md:px-4 py-3 text-center font-bold">P</th>
+                            <th class="px-2 md:px-4 py-3 text-center font-bold">NP</th>
+                            <th class="px-2 md:px-4 py-3 text-center font-bold">PF</th>
+                            <th class="px-2 md:px-4 py-3 text-center font-bold">PC</th>
+                            <th class="px-2 md:px-4 py-3 text-center font-bold hidden sm:table-cell">Dif.</th>
+                            <th class="px-2 md:px-4 py-3 text-center font-bold">PTS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clasificacion.map(equipo => {
+                            const diferencia = equipo.pf - equipo.pc;
+                            const esNuestroEquipo = equipo.equipo.toUpperCase().includes('MANISES') || 
+                                                    equipo.equipo.toUpperCase().includes('CBC');
+                            const fondoFila = esNuestroEquipo ? 'bg-orange-100' : 'bg-white';
+                            const colorDiferencia = diferencia > 0 ? 'text-green-600 font-bold' : 
+                                                   diferencia < 0 ? 'text-red-600 font-bold' : 
+                                                   'text-gray-600';
+
+                            return `
+                                <tr class="${fondoFila} border-b hover:bg-gray-50 transition-colors">
+                                    <td class="px-2 md:px-4 py-3 font-bold text-orange-600">${equipo.pos}</td>
+                                    <td class="px-2 md:px-4 py-3 font-semibold ${esNuestroEquipo ? 'text-orange-700' : 'text-gray-800'}">
+                                        ${esNuestroEquipo ? '🏀 ' : ''}${equipo.equipo}
+                                    </td>
+                                    <td class="px-2 md:px-4 py-3 text-center">${equipo.j}</td>
+                                    <td class="px-2 md:px-4 py-3 text-center text-green-600 font-semibold">${equipo.v}</td>
+                                    <td class="px-2 md:px-4 py-3 text-center text-red-600 font-semibold">${equipo.p}</td>
+                                    <td class="px-2 md:px-4 py-3 text-center">${equipo.np}</td>
+                                    <td class="px-2 md:px-4 py-3 text-center font-semibold">${equipo.pf}</td>
+                                    <td class="px-2 md:px-4 py-3 text-center font-semibold">${equipo.pc}</td>
+                                    <td class="px-2 md:px-4 py-3 text-center font-bold hidden sm:table-cell ${colorDiferencia}">
+                                        ${diferencia > 0 ? '+' : ''}${diferencia}
+                                    </td>
+                                    <td class="px-2 md:px-4 py-3 text-center font-bold bg-orange-200 text-orange-800">${equipo.pts}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Leyenda -->
+            <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                <h4 class="font-bold text-gray-800 mb-3">📋 Leyenda</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
+                    <div><strong>J:</strong> Partidos Jugados</div>
+                    <div><strong>V:</strong> Victorias</div>
+                    <div><strong>P:</strong> Derrotas</div>
+                    <div><strong>NP:</strong> No Presentado</div>
+                    <div><strong>PF:</strong> Puntos a Favor</div>
+                    <div><strong>PC:</strong> Puntos en Contra</div>
+                    <div><strong>Dif.:</strong> Diferencia (PF-PC)</div>
+                    <div><strong>PTS:</strong> Puntos de Clasificación</div>
+                </div>
+            </div>
+        `;
     }
 }
 

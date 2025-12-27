@@ -52,6 +52,16 @@ class CBCManisesApp {
         // Inicializar UI Manager
         uiManager.inicializar(this);
 
+        // Cargar filtro de fase desde localStorage
+        const filtroGuardado = localStorage.getItem('filtroFase');
+        if (filtroGuardado) {
+            this.estadisticasManager.setFiltroFase(filtroGuardado);
+        } else {
+            // Por defecto, mostrar temporada completa
+            this.estadisticasManager.setFiltroFase('todas');
+            localStorage.setItem('filtroFase', 'todas');
+        }
+
         console.log('🏀 CBC Manises - Aplicación inicializada');
     }
 
@@ -103,7 +113,7 @@ class CBCManisesApp {
 
     /**
      * Cambia la pestaña activa
-     * @param {string} tab - Nombre de la pestaña ('calendario', 'resultados', 'estadisticas')
+     * @param {string} tab - Nombre de la pestaña ('calendario', 'resultados', 'estadisticas', 'clasificacion')
      */
     cambiarTab(tab) {
         this.activeTab = tab;
@@ -123,6 +133,17 @@ class CBCManisesApp {
             }
         }
 
+        this.renderizar();
+    }
+
+    /**
+     * Cambia la fase en la tab de clasificación
+     * @param {string} fase - Fase ('primera', 'segunda')
+     */
+    cambiarFaseClasificacion(fase) {
+        console.log(`🏅 Fase clasificación: ${fase}`);
+        this.estadisticasManager.setFiltroFase(fase);
+        localStorage.setItem('filtroFase', fase);
         this.renderizar();
     }
 
@@ -225,6 +246,7 @@ window.cbcApp = app;
 
 // === FUNCIONES DE NAVEGACIÓN ===
 window.cambiarTab = (tab) => app.cambiarTab(tab);
+window.cambiarFaseClasificacion = (fase) => app.cambiarFaseClasificacion(fase);
 window.cambiarJugadorGlobal = (nombre) => app.cambiarJugador(nombre);
 
 // === FUNCIONES DE ADMIN ===
@@ -269,14 +291,33 @@ window.actualizarMarcadorGlobal = async (id, campo, incremento) => {
     try {
         const partido = app.partidosManager.getPartidoById(id);
 
-        // Si es positivo y es el equipo local (CBC Manises), preguntar quién anotó
-        if (incremento > 0 && campo === 'resultadoLocal' && partido.esLocal) {
-            // Mostrar modal de selector de jugador
-            window.mostrarSelectorJugadorGlobal(id, incremento, partido);
+        // DEBUG INFO
+        console.log('=== ACTUALIZAR MARCADOR ===');
+        console.log('partido.id:', id);
+        console.log('partido.esLocal:', partido.esLocal);
+        console.log('campo (resultadoLocal/resultadoVisitante):', campo);
+        console.log('incremento:', incremento);
+        console.log('resultadoLocal actual:', partido.resultadoLocal);
+        console.log('resultadoVisitante actual:', partido.resultadoVisitante);
+
+        // Determinar si es CBC quien está anotando
+        // Si CBC es LOCAL: campo debe ser 'resultadoLocal'
+        // Si CBC es VISITANTE: campo debe ser 'resultadoVisitante'
+        const esCBCLocal = campo === 'resultadoLocal' && partido.esLocal;
+        const esCBCVisitante = campo === 'resultadoVisitante' && !partido.esLocal;
+        const esCBCEnDirecto = (esCBCLocal || esCBCVisitante) && incremento > 0;
+
+        console.log('esCBCLocal:', esCBCLocal, 'esCBCVisitante:', esCBCVisitante, 'esCBCEnDirecto:', esCBCEnDirecto);
+
+        // Si es CBC anotando positivamente, mostrar selector de jugador
+        if (esCBCEnDirecto) {
+            window.mostrarSelectorJugadorGlobal(id, incremento, partido, campo);
         } else {
-            // Solo actualizar el marcador
+            // Si es rival o decremento, actualizar marcador directamente sin selector
             await app.partidosManager.actualizarMarcador(id, campo, incremento);
         }
+
+        console.log('Actualizando campo:', campo, 'con incremento:', incremento);
     } catch (error) {
         console.error('Error al actualizar marcador:', error);
     }
@@ -347,11 +388,11 @@ window.eliminarPartidoGlobal = async (id) => {
 };
 
 // === FUNCIONES DE ANOTACIONES ===
-window.mostrarSelectorJugadorGlobal = (partidoId, puntos, partido) => {
-    uiManager.mostrarSelectorJugador(partidoId, puntos, partido);
+window.mostrarSelectorJugadorGlobal = (partidoId, puntos, partido, campo) => {
+    uiManager.mostrarSelectorJugador(partidoId, puntos, partido, campo);
 };
 
-window.registrarAnotacionGlobal = async (partidoId, jugador, puntos, partido) => {
+window.registrarAnotacionGlobal = async (partidoId, jugador, puntos, partido, campo) => {
     try {
         // Registrar anotación
         const anotacionesActuales = app.anotacionesManager.getAnotaciones(partido);
@@ -361,20 +402,49 @@ window.registrarAnotacionGlobal = async (partidoId, jugador, puntos, partido) =>
             cuarto: partido.cuartoActual || ''
         }, anotacionesActuales);
 
-        // Actualizar marcador
-        await app.partidosManager.actualizarMarcador(partidoId, 'resultadoLocal', puntos);
+        // Usar el campo que viene como parámetro (desde Control de Marcador)
+        // Si no viene campo, usar el de CBC
+        const campoFinal = campo || (partido.esLocal ? 'resultadoLocal' : 'resultadoVisitante');
+        
+        // DEBUG ANTES DE ACTUALIZAR
+        console.log('ANTES de actualizar:', {
+            campo: campo,
+            campoFinal: campoFinal,
+            esLocal: partido.esLocal,
+            resultadoLocalActual: partido.resultadoLocal,
+            resultadoVisitanteActual: partido.resultadoVisitante,
+            puntosAñadir: puntos
+        });
+        
+        // Actualizar marcador en el campo correcto
+        await app.partidosManager.actualizarMarcador(partidoId, campoFinal, puntos);
 
-        console.log(`✅ Anotación registrada: +${puntos} de ${jugador}`);
+        // DEBUG DESPUÉS DE ACTUALIZAR
+        console.log('DESPUÉS de actualizar:', {
+            resultadoLocalNuevo: partido.resultadoLocal,
+            resultadoVisitanteNuevo: partido.resultadoVisitante
+        });
+
+        console.log(`✅ Anotación registrada: +${puntos} de ${jugador} en campo: ${campoFinal} (partido.esLocal: ${partido.esLocal})`);
     } catch (error) {
         console.error('❌ Error al registrar anotación:', error);
         alert('Error al registrar la anotación');
     }
 };
 
-window.saltarAnotacionGlobal = async (partidoId, puntos) => {
+window.saltarAnotacionGlobal = async (partidoId, puntos, campo) => {
     try {
+        // Obtener el partido para saber si es local o visitante
+        const partido = app.partidosManager.getPartidoById(partidoId);
+        
+        // Usar el campo que viene como parámetro
+        // Si no viene, usar el de CBC
+        const campoFinal = campo || (partido.esLocal ? 'resultadoLocal' : 'resultadoVisitante');
+        
         // Solo actualizar marcador sin registrar jugador
-        await app.partidosManager.actualizarMarcador(partidoId, 'resultadoLocal', puntos);
+        await app.partidosManager.actualizarMarcador(partidoId, campoFinal, puntos);
+        
+        console.log(`⏭️ Puntos saltados: +${puntos} en campo: ${campoFinal} (partido.esLocal: ${partido.esLocal})`);
     } catch (error) {
         console.error('❌ Error al actualizar marcador:', error);
     }
@@ -385,6 +455,38 @@ window.verAnotacionesGlobal = (partidoId) => {
     if (partido) {
         uiManager.mostrarModalAnotaciones(partido);
     }
+};
+
+/**
+ * Cambia el filtro de fase para estadísticas
+ * @param {string} fase - 'todas', 'primera', 'segunda'
+ */
+window.cambiarFiltroFaseGlobal = (fase) => {
+    // Establecer filtro en el manager
+    app.estadisticasManager.setFiltroFase(fase);
+    
+    // Guardar en localStorage
+    localStorage.setItem('filtroFase', fase);
+    
+    // Reprocesar datos con el nuevo filtro
+    const actas = app.actasManager.getActas();
+    app.estadisticasManager.procesarDatosJugadores(actas);
+    
+    console.log(`✅ Filtro de fase aplicado: ${fase}`);
+    
+    // Regenerar gráficas con los datos filtrados
+    if (app.activeTab === 'estadisticas') {
+        setTimeout(() => {
+            app.estadisticasManager.crearGraficasEquipo(actas);
+            const jugadorSeleccionado = app.estadisticasManager.getJugadorSeleccionado();
+            if (jugadorSeleccionado) {
+                app.estadisticasManager.crearGraficasJugador(jugadorSeleccionado);
+            }
+        }, 100);
+    }
+    
+    // Renderizar la interfaz
+    app.renderizar();
 };
 
 // Iniciar la aplicación cuando el DOM esté listo

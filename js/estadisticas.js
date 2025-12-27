@@ -8,10 +8,42 @@
  * - Estadísticas individuales por jugador
  */
 
+import { JUGADORES_EQUIPO } from './constants.js';
+
 export class EstadisticasManager {
     constructor() {
         this.datosJugadores = {};
+        this.jugadores = JUGADORES_EQUIPO; // Plantilla oficial con dorsales correctos
         this.jugadorSeleccionado = '';
+        this.filtroFase = 'todas'; // 'todas', 'primera', 'segunda'
+    }
+
+    /**
+     * Establece el filtro de fase para estadísticas
+     * @param {string} fase - 'todas', 'primera', 'segunda'
+     */
+    setFiltroFase(fase) {
+        this.filtroFase = fase;
+        console.log(`🔄 Filtro de fase: ${fase}`);
+    }
+
+    /**
+     * Obtiene el filtro de fase actual
+     * @returns {string} Filtro actual
+     */
+    getFiltroFase() {
+        return this.filtroFase;
+    }
+
+    /**
+     * Filtra actas por fase
+     * @param {Array} actas - Lista de actas
+     * @param {string} fase - 'todas', 'primera', 'segunda'
+     * @returns {Array} Actas filtradas
+     */
+    obtenerActasPorFase(actas, fase) {
+        if (fase === 'todas') return actas;
+        return actas.filter(acta => (acta.fase || 'primera') === fase);
     }
 
     /**
@@ -20,6 +52,9 @@ export class EstadisticasManager {
      */
     procesarDatosJugadores(actas) {
         this.datosJugadores = {};
+
+        // NO aplicar filtro de fase - el selector debe mostrar TODOS los jugadores de TODA la temporada
+        // const actasFiltradas = this.obtenerActasPorFase(actas, this.filtroFase);
 
         actas.forEach(acta => {
             if (!acta.jugadores || !Array.isArray(acta.jugadores)) {
@@ -70,7 +105,7 @@ export class EstadisticasManager {
             });
         });
 
-        console.log(`📊 ${Object.keys(this.datosJugadores).length} jugadores procesados`);
+        console.log(`📊 Selector de jugadores: ${actas.length} actas totales → ${Object.keys(this.datosJugadores).length} jugadores disponibles`);
     }
 
     /**
@@ -154,13 +189,16 @@ export class EstadisticasManager {
         // Destruir gráficas anteriores
         this.destruirGraficasEquipo();
 
-        if (actas.length === 0) {
+        // Aplicar filtro de fase
+        const actasFiltradas = this.obtenerActasPorFase(actas, this.filtroFase);
+
+        if (actasFiltradas.length === 0) {
             console.warn('⚠️ No hay actas para generar gráficas');
             return;
         }
 
         // Filtrar solo actas válidas con jugadores
-        const actasValidas = actas.filter(a =>
+        const actasValidas = actasFiltradas.filter(a =>
             a.jugadores && Array.isArray(a.jugadores) && a.jugadores.length > 0
         );
 
