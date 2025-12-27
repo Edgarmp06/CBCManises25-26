@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "ritwickdey.liveserver",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "firefox-devtools.vscode-firefox-debug",
+    "ms-vscode.vscode-js-profile-flame"
+  ]
+}
