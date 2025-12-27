@@ -352,6 +352,15 @@ window.verActaGlobal = (partidoId) => app.verActa(partidoId);
 window.cerrarActaGlobal = () => app.cerrarActa();
 
 // === FUNCIONES DE GESTIÓN DE ACTAS (PANEL ADMIN) ===
+window.eliminarActaGlobal = async (id) => {
+    try {
+        await app.actasManager.eliminarActa(id);
+        alert('✅ Acta eliminada correctamente');
+    } catch (error) {
+        alert(`❌ Error al eliminar acta: ${error.message}`);
+    }
+};
+
 window.eliminarJugadorActaGlobal = (index) => {
     uiManager.eliminarJugadorActa(index);
 };
