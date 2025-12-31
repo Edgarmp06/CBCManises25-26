@@ -12,19 +12,40 @@ export const firebaseConfig = {
 
 // Equipos rivales del calendario
 export const EQUIPOS_RIVALES = [
+    // EQUIPOS DE PRIMERA FASE
     { nombre: 'Picanya Bàsquet FuturPiso 10', logo: 'picanya.jpg' },
     { nombre: 'Isolia NB Torrent B', logo: 'torrent.jpg' },
     { nombre: 'Mislata BC Verde', logo: 'mislata.jpg' },
     { nombre: 'CB Moncada A', logo: 'moncada.jpg' },
-    { nombre: 'Picken MA A', logo: 'picken.jpg' }
+    { nombre: 'Picken MA A', logo: 'picken.jpg' },
+
+    // EQUIPOS DE SEGUNDA FASE
+    { nombre: 'C.B. Tabernes Blanques A', logo: 'tabernes.jpg' },
+    { nombre: 'CB TLLA Abastos C', logo: 'abastos.jpg' },
+    { nombre: 'CB Escolapias CMV', logo: 'escolapias.jpg' },
+    { nombre: 'Flex Básquet Riba-Roja', logo: 'riba-roja.jpg' },
+    { nombre: 'Academia Petraher B', logo: 'petraher.jpg' },
+    { nombre: 'S.D. El Pilar Valencia A', logo: 'el-pilar.jpg' }
 ];
 
 // Ubicaciones de los pabellones
 export const UBICACIONES = [
+    // UBICACIÓN LOCAL
     { nombre: 'Pabellón Alberto Arnal (Manises)', esLocal: true },
+
+    // UBICACIONES DE PRIMERA FASE
     { nombre: 'Pabellón Municipal Picanya', esLocal: false },
     { nombre: 'Pabellón El Vedat (Torrent)', esLocal: false },
     { nombre: 'Pabellón El Quint (Mislata)', esLocal: false },
     { nombre: 'Pabellón Badia Pedretera (Moncada)', esLocal: false },
-    { nombre: 'Pabellón Benimaclet (Valencia)', esLocal: false }
+    { nombre: 'Pabellón Benimaclet (Valencia)', esLocal: false },
+
+    // UBICACIONES DE SEGUNDA FASE
+    { nombre: 'PAB MUNI TABERNES BLANQUES', esLocal: false },
+    { nombre: 'IES Cid Campeador (Valencia)', esLocal: false },
+    { nombre: 'COL ESCOLAPIAS (Valencia)', esLocal: false },
+    { nombre: 'PAB MUNI RIBA-ROJA', esLocal: false },
+    { nombre: 'Pistas de Baloncesto Sant Marcellí (Valencia)', esLocal: false },
+    { nombre: 'PAB MUNI EL QUINT (Mislata)', esLocal: false },
+    { nombre: 'COL EL PILAR (Valencia)', esLocal: false }
 ];

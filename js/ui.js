@@ -7,7 +7,7 @@
 
 import { formatearFecha, formatearFechaCorta } from './utils.js';
 import { INFO_EQUIPO, URLS, JUGADORES_EQUIPO, CLASIFICACION_PRIMERA_FASE, CLASIFICACION_SEGUNDA_FASE } from './constants.js';
-import { UBICACIONES } from './config.js';
+import { UBICACIONES, EQUIPOS_RIVALES } from './config.js';
 
 /**
  * Clase principal para gestionar la interfaz de usuario
@@ -26,6 +26,10 @@ export class UIManager {
     inicializar(app) {
         this.app = app;
         console.log('🎨 UIManager inicializado');
+        console.log('📊 EQUIPOS_RIVALES cargados:', EQUIPOS_RIVALES);
+        console.log('📍 Total de equipos:', EQUIPOS_RIVALES.length, '(5 de 1ª fase + 6 de 2ª fase = 11)');
+        console.log('🏟️ UBICACIONES cargadas:', UBICACIONES);
+        console.log('📍 Total de ubicaciones:', UBICACIONES.length);
     }
 
     /**
@@ -77,9 +81,37 @@ export class UIManager {
             formPartido.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const ubicacionSeleccionada = document.getElementById('ubicacion').value;
-                const ubicacionConfig = UBICACIONES.find(u => u.nombre === ubicacionSeleccionada);
-                const esLocal = ubicacionConfig ? ubicacionConfig.esLocal : true;
+                // Verificar si usa ubicación personalizada
+                const ubicacionCustomCheckbox = document.getElementById('ubicacion-custom-checkbox');
+                let ubicacionSeleccionada;
+                let esLocal;
+
+                if (ubicacionCustomCheckbox && ubicacionCustomCheckbox.checked) {
+                    // Usar ubicación personalizada
+                    ubicacionSeleccionada = document.getElementById('ubicacion-custom').value.trim();
+
+                    // Validación
+                    if (!ubicacionSeleccionada) {
+                        alert('⚠️ Por favor, escribe una ubicación personalizada');
+                        return;
+                    }
+
+                    // Obtener el valor del radio button seleccionado
+                    const radioTipo = document.querySelector('input[name="ubicacion-custom-tipo"]:checked');
+                    esLocal = radioTipo ? radioTipo.value === 'true' : false;
+                } else {
+                    // Usar ubicación del select
+                    ubicacionSeleccionada = document.getElementById('ubicacion').value;
+
+                    // Validación
+                    if (!ubicacionSeleccionada) {
+                        alert('⚠️ Por favor, selecciona una ubicación');
+                        return;
+                    }
+
+                    const ubicacionConfig = UBICACIONES.find(u => u.nombre === ubicacionSeleccionada);
+                    esLocal = ubicacionConfig ? ubicacionConfig.esLocal : false;
+                }
 
                 const data = {
                     fecha: document.getElementById('fecha').value,
@@ -101,6 +133,9 @@ export class UIManager {
                 try {
                     await window.añadirPartidoGlobal(data);
                     e.target.reset();
+                    // Reset del checkbox y container custom
+                    if (ubicacionCustomCheckbox) ubicacionCustomCheckbox.checked = false;
+                    window.toggleUbicacionCustom();
                 } catch (error) {
                     console.error('❌ Error al añadir partido:', error);
                     alert('❌ Error: ' + error.message);
@@ -440,9 +475,38 @@ export class UIManager {
                 e.preventDefault();
 
                 const partidoId = document.getElementById('editar-partido-id').value;
-                const ubicacionSeleccionada = document.getElementById('editar-ubicacion').value;
-                const ubicacionConfig = UBICACIONES.find(u => u.nombre === ubicacionSeleccionada);
-                const esLocal = ubicacionConfig ? ubicacionConfig.esLocal : true;
+
+                // Verificar si usa ubicación personalizada
+                const ubicacionCustomCheckbox = document.getElementById('editar-ubicacion-custom-checkbox');
+                let ubicacionSeleccionada;
+                let esLocal;
+
+                if (ubicacionCustomCheckbox && ubicacionCustomCheckbox.checked) {
+                    // Usar ubicación personalizada
+                    ubicacionSeleccionada = document.getElementById('editar-ubicacion-custom').value.trim();
+
+                    // Validación
+                    if (!ubicacionSeleccionada) {
+                        alert('⚠️ Por favor, escribe una ubicación personalizada');
+                        return;
+                    }
+
+                    // Obtener el valor del radio button seleccionado
+                    const radioTipo = document.querySelector('input[name="ubicacion-custom-tipo-editar"]:checked');
+                    esLocal = radioTipo ? radioTipo.value === 'true' : false;
+                } else {
+                    // Usar ubicación del select
+                    ubicacionSeleccionada = document.getElementById('editar-ubicacion').value;
+
+                    // Validación
+                    if (!ubicacionSeleccionada) {
+                        alert('⚠️ Por favor, selecciona una ubicación');
+                        return;
+                    }
+
+                    const ubicacionConfig = UBICACIONES.find(u => u.nombre === ubicacionSeleccionada);
+                    esLocal = ubicacionConfig ? ubicacionConfig.esLocal : false;
+                }
 
                 // Obtener y limpiar valores de resultado (pueden estar vacíos)
                 const resultadoLocalValue = document.getElementById('editar-resultado-local').value.trim();
@@ -496,7 +560,6 @@ export class UIManager {
         document.getElementById('editar-fecha').value = partido.fecha;
         document.getElementById('editar-hora').value = partido.hora;
         document.getElementById('editar-rival').value = partido.rival;
-        document.getElementById('editar-ubicacion').value = partido.ubicacion;
         document.getElementById('editar-jornada').value = partido.jornada;
         document.getElementById('editar-fase').value = partido.fase || 'primera';
         document.getElementById('editar-finalizado').checked = partido.finalizado || false;
@@ -506,6 +569,36 @@ export class UIManager {
         document.getElementById('editar-cuarto').value = partido.cuartoActual || '';
         if (document.getElementById('editar-sin-acta')) {
             document.getElementById('editar-sin-acta').checked = partido.sinActa || false;
+        }
+
+        // Verificar si la ubicación es personalizada (no está en UBICACIONES)
+        const ubicacionEnLista = UBICACIONES.find(u => u.nombre === partido.ubicacion);
+        const checkboxCustom = document.getElementById('editar-ubicacion-custom-checkbox');
+        const inputCustom = document.getElementById('editar-ubicacion-custom');
+
+        if (!ubicacionEnLista && partido.ubicacion) {
+            // Ubicación personalizada
+            if (checkboxCustom) checkboxCustom.checked = true;
+            if (inputCustom) inputCustom.value = partido.ubicacion;
+            window.toggleUbicacionCustomEditar();
+
+            // Seleccionar el radio button correcto según esLocal
+            const radioLocal = document.querySelector('input[name="ubicacion-custom-tipo-editar"][value="true"]');
+            const radioVisitante = document.querySelector('input[name="ubicacion-custom-tipo-editar"][value="false"]');
+
+            if (partido.esLocal) {
+                if (radioLocal) radioLocal.checked = true;
+            } else {
+                if (radioVisitante) radioVisitante.checked = true;
+            }
+        } else {
+            // Ubicación normal
+            if (checkboxCustom) checkboxCustom.checked = false;
+            document.getElementById('editar-ubicacion').value = partido.ubicacion;
+            if (inputCustom) inputCustom.value = '';
+            // Asegurar que el container custom esté oculto
+            const container = document.getElementById('editar-ubicacion-custom-container');
+            if (container) container.style.display = 'none';
         }
 
         // Mostrar modal
@@ -605,15 +698,52 @@ export class UIManager {
 
                         <div style="margin-bottom: 1rem;">
                             <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Ubicación</label>
-                            <select id="editar-ubicacion" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                            <select id="editar-ubicacion" style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
                                 <option value="">Seleccionar pabellón...</option>
-                                <option value="Pabellón Alberto Arnal (Manises)">🏠 Pabellón Alberto Arnal (Manises) - LOCAL</option>
-                                <option value="Pabellón Municipal Picanya">🚗 Pabellón Municipal Picanya</option>
-                                <option value="Pabellón El Vedat (Torrent)">🚗 Pabellón El Vedat (Torrent)</option>
-                                <option value="Pabellón El Quint (Mislata)">🚗 Pabellón El Quint (Mislata)</option>
-                                <option value="Pabellón Badia Pedretera (Moncada)">🚗 Pabellón Badia Pedretera (Moncada)</option>
-                                <option value="Pabellón Benimaclet (Valencia)">🚗 Pabellón Benimaclet (Valencia)</option>
+                                ${UBICACIONES.map(ubicacion =>
+                                    `<option value="${ubicacion.nombre}">${ubicacion.esLocal ? '🏠' : '🚗'} ${ubicacion.nombre}${ubicacion.esLocal ? ' - LOCAL' : ''}</option>`
+                                ).join('')}
                             </select>
+                            <div style="margin-top: 0.5rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 600; color: #4b5563; cursor: pointer;">
+                                    <input
+                                        type="checkbox"
+                                        id="editar-ubicacion-custom-checkbox"
+                                        style="border-radius: 0.25rem; border: 1px solid #d1d5db;"
+                                        onchange="window.toggleUbicacionCustomEditar()"
+                                    />
+                                    <span>📍 Usar ubicación personalizada</span>
+                                </label>
+                            </div>
+                            <div id="editar-ubicacion-custom-container" style="margin-top: 0.5rem; display: none;">
+                                <input
+                                    type="text"
+                                    id="editar-ubicacion-custom"
+                                    placeholder="Ej: Pabellón Municipal de Paterna"
+                                    style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; margin-bottom: 0.75rem;"
+                                />
+                                <div style="display: flex; gap: 1rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input
+                                            type="radio"
+                                            name="ubicacion-custom-tipo-editar"
+                                            value="true"
+                                            style="cursor: pointer;"
+                                        />
+                                        <span style="font-size: 0.875rem;">🏠 Local (en casa)</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input
+                                            type="radio"
+                                            name="ubicacion-custom-tipo-editar"
+                                            value="false"
+                                            checked
+                                            style="cursor: pointer;"
+                                        />
+                                        <span style="font-size: 0.875rem;">✈️ Visitante (fuera)</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
@@ -621,11 +751,9 @@ export class UIManager {
                                 <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Rival</label>
                                 <select id="editar-rival" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
                                     <option value="">Seleccionar equipo...</option>
-                                    <option value="Picanya Bàsquet FuturPiso 10">Picanya Bàsquet FuturPiso 10</option>
-                                    <option value="Isolia NB Torrent B">Isolia NB Torrent B</option>
-                                    <option value="Mislata BC Verde">Mislata BC Verde</option>
-                                    <option value="CB Moncada A">CB Moncada A</option>
-                                    <option value="Picken MA A">Picken MA A</option>
+                                    ${EQUIPOS_RIVALES.map(equipo =>
+                                        `<option value="${equipo.nombre}">${equipo.nombre}</option>`
+                                    ).join('')}
                                 </select>
                             </div>
                             <div>
@@ -747,7 +875,7 @@ export class UIManager {
                     <!-- Información de temporada -->
                     <div class="text-center">
                         <p class="text-sm text-gray-400">
-                            🏀 <strong class="text-white">Temporada 2025/26</strong> • Preferente Cadete Masculino Grupo D
+                            🏀 <strong class="text-white">Temporada 2025/26</strong> • Preferente Cadete Masculino Grupo D • Cadete Masculino IR Campeonato 1ª Zonal Fase Regular Grupo D
                         </p>
                     </div>
                 </div>
@@ -831,7 +959,7 @@ export class UIManager {
 
         // Obtener el filtro actual de fase
         const filtroFaseActual = this.app.estadisticasManager.getFiltroFase();
-        
+
         const partidosFinalizados = partidos
             .filter(p => p.finalizado)
             .filter(p => {
@@ -937,7 +1065,7 @@ export class UIManager {
      */
     generarTabResultados(partidos, actas, isAdmin) {
         const filtroActual = this.app.estadisticasManager.getFiltroFase();
-        
+
         // Los botones de filtro SIEMPRE se muestran
         const botonesHeader = `
             <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">🏆 Resultados</h3>
@@ -946,18 +1074,18 @@ export class UIManager {
             <div class="bg-white rounded-lg shadow-md p-4 mb-4">
                 <p class="text-sm font-bold text-gray-700 mb-3">Filtrar por fase:</p>
                 <div class="flex flex-wrap gap-2">
-                    <button 
-                        onclick="window.cambiarFiltroFaseGlobal('todas')" 
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('todas')"
                         class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'todas' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
                         📊 Temporada Completa
                     </button>
-                    <button 
-                        onclick="window.cambiarFiltroFaseGlobal('primera')" 
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('primera')"
                         class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'primera' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
                         🟡 1ª Fase
                     </button>
-                    <button 
-                        onclick="window.cambiarFiltroFaseGlobal('segunda')" 
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('segunda')"
                         class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'segunda' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
                         🔵 2ª Fase
                     </button>
@@ -975,13 +1103,13 @@ export class UIManager {
                             ${filtroActual === 'todas' ? 'No hay resultados aún' : `No hay resultados de ${filtroActual === 'primera' ? '1ª Fase' : '2ª Fase'}`}
                         </h3>
                         <p class="text-gray-500 mb-4">
-                            ${filtroActual === 'todas' 
+                            ${filtroActual === 'todas'
                                 ? 'Los resultados aparecerán aquí una vez finalizados los partidos'
                                 : `No hay partidos de ${filtroActual === 'primera' ? '1ª Fase' : '2ª Fase'} todavía.`}
                         </p>
                         ${filtroActual !== 'todas' ? `
-                            <button 
-                                onclick="window.cambiarFiltroFaseGlobal('todas')" 
+                            <button
+                                onclick="window.cambiarFiltroFaseGlobal('todas')"
                                 class="mt-4 bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-all">
                                 Ver Temporada Completa
                             </button>
@@ -1015,18 +1143,18 @@ export class UIManager {
             <div class="bg-white rounded-lg shadow-md p-4">
                 <p class="text-sm font-bold text-gray-700 mb-3">Filtrar por fase:</p>
                 <div class="flex flex-wrap gap-2">
-                    <button 
-                        onclick="window.cambiarFiltroFaseGlobal('todas')" 
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('todas')"
                         class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'todas' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
                         📊 Temporada Completa
                     </button>
-                    <button 
-                        onclick="window.cambiarFiltroFaseGlobal('primera')" 
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('primera')"
                         class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'primera' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
                         🟡 1ª Fase
                     </button>
-                    <button 
-                        onclick="window.cambiarFiltroFaseGlobal('segunda')" 
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('segunda')"
                         class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'segunda' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
                         🔵 2ª Fase
                     </button>
@@ -1598,25 +1726,60 @@ export class UIManager {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
-                            <select id="ubicacion" required class="w-full border rounded px-3 py-2">
+                            <select id="ubicacion" class="w-full border rounded px-3 py-2">
                                 <option value="">Seleccionar pabellón...</option>
-                                <option value="Pabellón Alberto Arnal (Manises)">🏠 Pabellón Alberto Arnal (Manises) - LOCAL</option>
-                                <option value="Pabellón Municipal Picanya">🚗 Pabellón Municipal Picanya</option>
-                                <option value="Pabellón El Vedat (Torrent)">🚗 Pabellón El Vedat (Torrent)</option>
-                                <option value="Pabellón El Quint (Mislata)">🚗 Pabellón El Quint (Mislata)</option>
-                                <option value="Pabellón Badia Pedretera (Moncada)">🚗 Pabellón Badia Pedretera (Moncada)</option>
-                                <option value="Pabellón Benimaclet (Valencia)">🚗 Pabellón Benimaclet (Valencia)</option>
+                                ${UBICACIONES.map(ubicacion =>
+                                    `<option value="${ubicacion.nombre}">${ubicacion.esLocal ? '🏠' : '🚗'} ${ubicacion.nombre}${ubicacion.esLocal ? ' - LOCAL' : ''}</option>`
+                                ).join('')}
                             </select>
+                            <div class="mt-2">
+                                <label class="flex items-center gap-2 text-sm font-medium text-gray-600 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        id="ubicacion-custom-checkbox"
+                                        class="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                                        onchange="window.toggleUbicacionCustom()"
+                                    />
+                                    <span>📍 Usar ubicación personalizada</span>
+                                </label>
+                            </div>
+                            <div id="ubicacion-custom-container" class="mt-2 hidden">
+                                <input
+                                    type="text"
+                                    id="ubicacion-custom"
+                                    placeholder="Ej: Pabellón Municipal de Paterna"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-3"
+                                />
+                                <div class="flex gap-4">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="ubicacion-custom-tipo"
+                                            value="true"
+                                            class="text-orange-600 focus:ring-orange-500"
+                                        />
+                                        <span class="text-sm">🏠 Local (en casa)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="ubicacion-custom-tipo"
+                                            value="false"
+                                            checked
+                                            class="text-orange-600 focus:ring-orange-500"
+                                        />
+                                        <span class="text-sm">✈️ Visitante (fuera)</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Rival</label>
                             <select id="rival" required class="w-full border rounded px-3 py-2">
                                 <option value="">Seleccionar equipo...</option>
-                                <option value="Picanya Bàsquet FuturPiso 10">Picanya Bàsquet FuturPiso 10</option>
-                                <option value="Isolia NB Torrent B">Isolia NB Torrent B</option>
-                                <option value="Mislata BC Verde">Mislata BC Verde</option>
-                                <option value="CB Moncada A">CB Moncada A</option>
-                                <option value="Picken MA A">Picken MA A</option>
+                                ${EQUIPOS_RIVALES.map(equipo =>
+                                    `<option value="${equipo.nombre}">${equipo.nombre}</option>`
+                                ).join('')}
                             </select>
                         </div>
                         <div>
@@ -2113,11 +2276,11 @@ export class UIManager {
                     <tbody>
                         ${clasificacion.map(equipo => {
                             const diferencia = equipo.pf - equipo.pc;
-                            const esNuestroEquipo = equipo.equipo.toUpperCase().includes('MANISES') || 
+                            const esNuestroEquipo = equipo.equipo.toUpperCase().includes('MANISES') ||
                                                     equipo.equipo.toUpperCase().includes('CBC');
                             const fondoFila = esNuestroEquipo ? 'bg-orange-100' : 'bg-white';
-                            const colorDiferencia = diferencia > 0 ? 'text-green-600 font-bold' : 
-                                                   diferencia < 0 ? 'text-red-600 font-bold' : 
+                            const colorDiferencia = diferencia > 0 ? 'text-green-600 font-bold' :
+                                                   diferencia < 0 ? 'text-red-600 font-bold' :
                                                    'text-gray-600';
 
                             return `

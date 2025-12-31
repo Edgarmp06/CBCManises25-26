@@ -276,6 +276,80 @@ window.actualizarPartidoGlobal = async (id, data) => {
     }
 };
 
+// === FUNCIÓN PARA UBICACIÓN PERSONALIZADA ===
+window.toggleUbicacionCustom = function() {
+    const checkbox = document.getElementById('ubicacion-custom-checkbox');
+    const container = document.getElementById('ubicacion-custom-container');
+    const select = document.getElementById('ubicacion');
+
+    console.log('🔧 toggleUbicacionCustom called');
+    console.log('  - Checkbox:', checkbox);
+    console.log('  - Checked:', checkbox?.checked);
+    console.log('  - Container:', container);
+
+    if (checkbox && checkbox.checked) {
+        if (container) {
+            container.classList.remove('hidden');
+            console.log('  ✅ Container mostrado (hidden removed)');
+            console.log('  - Container classes:', container.className);
+        }
+        if (select) {
+            select.disabled = true;
+            select.classList.add('opacity-50');
+            console.log('  ✅ Select deshabilitado');
+        }
+    } else {
+        if (container) {
+            container.classList.add('hidden');
+            console.log('  ❌ Container oculto (hidden added)');
+        }
+        if (select) {
+            select.disabled = false;
+            select.classList.remove('opacity-50');
+            console.log('  ✅ Select habilitado');
+        }
+        const customInput = document.getElementById('ubicacion-custom');
+        if (customInput) customInput.value = '';
+    }
+};
+
+// Función similar para el modal de editar
+window.toggleUbicacionCustomEditar = function() {
+    const checkbox = document.getElementById('editar-ubicacion-custom-checkbox');
+    const container = document.getElementById('editar-ubicacion-custom-container');
+    const select = document.getElementById('editar-ubicacion');
+
+    console.log('🔧 toggleUbicacionCustomEditar called');
+    console.log('  - Checkbox:', checkbox);
+    console.log('  - Checked:', checkbox?.checked);
+    console.log('  - Container:', container);
+
+    if (checkbox && checkbox.checked) {
+        // El modal usa inline styles, no clases
+        if (container) {
+            container.style.display = 'block';
+            console.log('  ✅ Container mostrado (display: block)');
+        }
+        if (select) {
+            select.disabled = true;
+            select.classList.add('opacity-50');
+            console.log('  ✅ Select deshabilitado');
+        }
+    } else {
+        if (container) {
+            container.style.display = 'none';
+            console.log('  ❌ Container oculto (display: none)');
+        }
+        if (select) {
+            select.disabled = false;
+            select.classList.remove('opacity-50');
+            console.log('  ✅ Select habilitado');
+        }
+        const customInput = document.getElementById('editar-ubicacion-custom');
+        if (customInput) customInput.value = '';
+    }
+};
+
 window.eliminarPartidoGlobal = async (id) => {
     if (confirm('¿Estás seguro de eliminar este partido?')) {
         try {

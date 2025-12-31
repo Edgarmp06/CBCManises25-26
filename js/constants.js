@@ -216,7 +216,7 @@ export const INFO_EQUIPO = {
     NOMBRE: 'CBC Manises-Quart',
     CATEGORIA: 'Cadete Masculino',
     TEMPORADA: '2025/26',
-    COMPETICION: 'Preferente Grupo D',
+    COMPETICION: 'Preferente Grupo D - IR Campeonato 1ª Zonal Grupo D',
     LOGO: 'logos/cbc-manises.jpg',
     PABELLON_LOCAL: 'Pabellón Alberto Arnal (Manises)'
 };
