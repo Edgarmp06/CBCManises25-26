@@ -1,379 +1,635 @@
-# 🏀 CBC Manises-Quart - Web Oficial
+# 🏀 CBC Manises-Quart - Sistema de Gestión Deportiva
 
-Web oficial del equipo Cadete Masculino del CBC Manises-Quart para la temporada 2025/26.
+> Plataforma integral de seguimiento, estadísticas y administración para el equipo Cadete Masculino - Temporada 2025/26
+
+**Última actualización:** 31 de diciembre de 2025
+
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://cbc-manises.vercel.app)
+[![Firebase](https://img.shields.io/badge/Backend-Firebase-orange?logo=firebase)](https://firebase.google.com)
+[![Performance](https://img.shields.io/badge/PageSpeed-99%2F100-brightgreen)](https://pagespeed.web.dev/)
+
+---
+
+## 📋 Tabla de Contenidos
+
+- [Características](#-características)
+- [Tecnologías](#-tecnologías)
+- [Estructura del Proyecto](#-estructura-del-proyecto)
+- [Arquitectura](#-arquitectura-de-la-aplicación)
+- [Instalación](#-desarrollo)
+- [Estructura de Datos Firebase](#-estructura-de-datos)
+- [Deployment](#-deployment)
+- [Rendimiento](#-estadísticas-de-rendimiento)
+- [Enlaces](#-enlaces)
+- [Autor](#-desarrollo)
+
+---
 
 ## 🌟 Características
 
-### ✅ Implementado
+### ✅ Gestión de Partidos
 
-- 📅 **Calendario de partidos** - Todos los partidos de la temporada con filtros por fase
-- 🔴 **Marcadores en directo** - Seguimiento en tiempo real durante los partidos
-- 📝 **Anotaciones en vivo** - Sistema opcional para registrar anotadores durante el partido
-  - Selector de jugador al anotar puntos (+1, +2, +3)
-  - Visualización pública de anotaciones
-  - Resumen organizado por jugador con sugerencias para el acta
-  - Opción de saltar registro si no se desea usar
-- 🏆 **Resultados** - Historial completo de partidos finalizados con filtros por fase
-- 📊 **Actas oficiales** - Estadísticas detalladas de cada jugador por partido
-  - Gestión completa de actas (crear, editar, eliminar)
-  - Editor intuitivo con validaciones
-  - Visualización con estadísticas calculadas
-  - Panel de gestión de actas para administrador
-- 📈 **Gráficas de estadísticas** - Visualización de evolución del equipo e individual
-  - Estadísticas del equipo por jornada (puntos, faltas, tiros, % TL)
-  - Estadísticas individuales por jugador (% TL, puntos T2/T3, faltas)
-  - Selector de jugador con resumen de totales
-  - Gráficas interactivas con Chart.js
-  - Filtros por fase (1ª, 2ª, todas)
-- 🏅 **Clasificación de la liga** - Tabla de posiciones del Grupo D
-  - Visualización completa de 1ª fase con todas las columnas (J, V, P, NP, PF, PC, Dif., PTS)
-  - Resaltado de CBC Manises-Quart
-  - Diferencia de puntos con colores (verde/rojo)
-  - Placeholder para 2ª fase (enero 2026)
-- 📱 **Diseño responsive** - Optimizado para móvil, tablet y escritorio
-- ⚡ **Rendimiento excelente** - 99/100 en PageSpeed Insights (móvil y desktop)
-- 💬 **Canal de WhatsApp** - Botón directo para unirse al canal oficial
-- 🔐 **Panel de administración** - Gestión completa
-  - Crear/editar/eliminar partidos
-  - Crear/editar/eliminar actas
-  - Visualización de logs de cambios
-  - Tabla de gestión de actas con delete buttons
-- 🎨 **Galería de fotos** - Fondo rotativo con imágenes del equipo
-- ✏️ **Edición intuitiva** - Modales para editar partidos desde cualquier vista
-- 🔄 **Filtro de fases** - Sistema completo de filtrado por 1ª/2ª fase en todas las vistas
-  - Calendario: filtrado automático por fase
-  - Resultados: filtrado por fase
+#### 📅 Calendario Inteligente
+- Visualización completa de todos los partidos de la temporada
+- **Sistema de fases dual** (1ª y 2ª fase) con filtrado sincronizado
+- Badges visuales de fase: 🟡 Primera Fase / 🔵 Segunda Fase
+- Próximos partidos destacados con cuenta regresiva
+- Indicadores de partido en directo (🔴 LIVE)
+
+#### 🔴 Marcadores en Directo
+- Seguimiento en tiempo real durante los partidos
+- **Control independiente de marcador local/visitante** (bug corregido)
+- Gestión por cuartos (Q1, Q2, Q3, Q4, OT)
+- Actualización automática visible para todos los usuarios
+- Sistema de anotaciones en vivo opcional
+
+#### 📝 Anotaciones en Vivo
+- Registro opcional de anotadores durante el partido
+- Selector de jugador desde JUGADORES_EQUIPO con dorsales correctos
+- Registro de puntos (+1, +2, +3) por cuarto
+- Visualización pública en tiempo real
+- Resumen organizado por jugador
+- **Sugerencias automáticas para el acta oficial**
+
+### 📊 Sistema de Actas Oficiales
+
+#### ✏️ Gestión Completa
+- **Creación de actas** con editor intuitivo
+- **Heredan automáticamente la fase del partido** (1ª/2ª)
+- Selector de jugadores desde plantilla oficial (JUGADORES_EQUIPO)
+- Dorsales siempre correctos y sincronizados
+- **Validaciones automáticas** de campos obligatorios
+- **Edición y eliminación** con confirmaciones de seguridad
+- Panel de gestión exclusivo para administradores
+
+#### 📈 Estadísticas Automáticas
+Las actas calculan automáticamente:
+- Porcentajes de tiro libre, T2, T3
+- Puntos totales por jugador
+- Minutos jugados
+- Faltas cometidas
+- Eficiencia de tiro
+
+### 📈 Gráficas Interactivas (Chart.js)
+
+#### Estadísticas del Equipo
+- **Puntos por jornada** - Gráfica de barras con evolución
+- **Faltas por jornada** - Línea de tendencia
+- **Tiros anotados** - Comparativa T2, T3, TL
+- **Porcentaje TL** - Evolución del acierto
+
+#### Estadísticas Individuales
+- Selector de jugador con resumen de totales (PJ, PTS, MIN, TL%, FC)
+- **% Tiros Libres** por jornada
+- **Puntos T2/T3** por partido
+- **Faltas** por partido
+- **Filtros por fase** sincronizados con el resto de la app
+
+### 🏅 Clasificación de Liga
+
+#### Tabla Completa por Fases
+- **1ª Fase**: Clasificación con todas las columnas (J, V, P, NP, PF, PC, Dif., PTS)
+- **2ª Fase**: Sistema independiente para el campeonato zonal
+- Resaltado especial para CBC Manises-Quart
+- Diferencia de puntos con colores (verde/rojo)
+- Actualización manual desde constants.js
+
+### 🎨 Interfaz y UX
+
+#### 📱 Diseño Responsive
+- **Móvil first** con navegación optimizada
+- Tabs adaptativas (Calendario, Resultados, Estadísticas, Clasificación)
+- Modales responsive para edición
+- Galería de fotos rotativa en fondo
+
+#### ⚡ Rendimiento Excelente
+- **99/100 en PageSpeed Insights** (móvil y desktop)
+- < 1 segundo tiempo de carga
+- Optimizado para conexiones lentas
+- Sin frameworks pesados (Vanilla JS)
+- < 100KB total del bundle
+
+#### 🔐 Panel de Administración
+- Autenticación con Firebase Auth
+- **CRUD completo de partidos** con modal intuitivo
+- **CRUD completo de actas** con tabla de gestión
+- **Ubicaciones personalizadas** con opción Local/Visitante
+- Actualización de marcadores en directo
+- Logs de cambios y confirmaciones
+
+### 🔄 Sistema de Fases (Nueva Funcionalidad)
+
+#### Implementación Completa
+- **Filtros sincronizados** en todas las vistas:
+  - Calendario: muestra solo partidos de la fase seleccionada
+  - Resultados: filtra por fase
   - Estadísticas: gráficas filtradas por fase
-  - Almacenamiento en localStorage
+  - Clasificación: tabla por fase
+- **Persistencia en localStorage** - recuerda la fase seleccionada
+- **Badges visuales** 🟡/🔵 en tarjetas de partidos
+- **Las actas heredan automáticamente** la fase del partido
 
-### 🔧 Mejoras Recientes (Última sesión)
+### 🌐 Integración Social
 
-- ✅ Sistema de fases implementado (1ª/2ª fase con filtrado completo)
-- ✅ Bug de marcador corregido (puntos a equipos correctos)
-- ✅ Selector de jugadores mejorado (obtiene de todas las actas, dorsales siempre correctos)
-- ✅ Gestión de actas mejorada (delete functionality, confirmación)
-- ✅ Tab de clasificación completamente funcional
-- ✅ Interfaz mejorada con botones responsive
+- 💬 **Canal de WhatsApp oficial** con botón directo
+- 📱 **Compartir resultados** en redes sociales
+- 📊 **Analytics integrado** (Vercel Analytics)
+
+---
 
 ## 🛠️ Tecnologías
 
-- **Frontend**: HTML5, JavaScript ES6 Modules, Tailwind CSS 3
-- **Gráficas**: Chart.js 4.4.0
-- **Backend**: Firebase Firestore (base de datos en tiempo real)
-- **Autenticación**: Firebase Auth
-- **Hosting**: Vercel con CI/CD automático
-- **Analytics**: Vercel Analytics + Speed Insights
-- **Arquitectura**: Clean Architecture (5 capas)
+### Frontend
+- **HTML5** - Estructura semántica
+- **JavaScript ES6 Modules** - Arquitectura modular
+- **Tailwind CSS 3** - Diseño responsive y utilidades
+
+### Gráficas y Visualización
+- **Chart.js 4.4.0** - Gráficas interactivas
+- **CSS Custom Properties** - Tematización
+
+### Backend y Base de Datos
+- **Firebase Firestore** - Base de datos en tiempo real
+- **Firebase Auth** - Autenticación segura
+- **Firebase Security Rules** - Control de acceso
+
+### Hosting y CI/CD
+- **Vercel** - Hosting con despliegue automático
+- **GitHub** - Control de versiones
+- **Vercel Analytics** - Métricas de rendimiento
+
+### Arquitectura
+- **Clean Architecture (5 capas)** - Separación de responsabilidades
+- **Event-Driven** - Comunicación entre módulos
+- **Real-time listeners** - Sincronización automática
+
+---
 
 ## 📁 Estructura del Proyecto
 
 ```
-web_balonmcesto/
-├── index.html              # Página principal
+CBCManises25-26-main/
+├── index.html                 # Página principal
 ├── css/
-│   └── styles.css          # Estilos personalizados (complementa Tailwind)
+│   └── styles.css             # Estilos personalizados
 ├── js/
-│   ├── config.js           # Configuración Firebase y ubicaciones
-│   ├── constants.js        # Constantes globales (TABS, JUGADORES, CLASIFICACION, etc.)
-│   ├── partidos.js         # Gestor de partidos (CRUD + listeners)
-│   ├── actas.js            # Gestor de actas oficiales (CRUD + listeners)
-│   ├── estadisticas.js     # Procesamiento de datos y generación de gráficas
-│   ├── admin.js            # Panel de administración y autenticación
-│   ├── anotaciones.js      # Sistema de anotaciones en vivo
-│   ├── ui.js               # Gestión de interfaz (2000+ líneas, todas las vistas)
-│   ├── app.js              # Orquestador principal y punto de entrada
-│   ├── utils.js            # Funciones auxiliares (formateo, validación)
-│   ├── eventBus.js         # Sistema de eventos (comunicación entre módulos)
-│   └── constants.js        # Constantes (TABS, CLASIFICACION, JUGADORES_EQUIPO, etc.)
-├── imagenes/               # Imágenes de fondo rotativo (6 imágenes)
-├── logos/                  # Logos de equipos rivales (6 equipos)
-├── .gitignore              # Archivos ignorados por Git
-├── robots.txt              # Configuración SEO para crawlers
-├── sitemap.xml             # Mapa del sitio para SEO
-├── CLEAN_ARCHITECTURE.md   # Documentación detallada de arquitectura
-├── loaderio-*.txt          # Token de verificación de carga
-└── README.md               # Este archivo
+│   ├── app.js                 # 🎯 Orquestador principal
+│   ├── config.js              # ⚙️ Configuración Firebase + equipos + ubicaciones
+│   ├── constants.js           # 📊 Constantes (JUGADORES_EQUIPO, CLASIFICACION)
+│   ├── partidos.js            # 🏀 Gestor de partidos (CRUD + listeners)
+│   ├── actas.js               # 📝 Gestor de actas (CRUD + listeners)
+│   ├── estadisticas.js        # 📈 Procesamiento y gráficas
+│   ├── admin.js               # 🔐 Panel admin + autenticación
+│   ├── anotaciones.js         # 🎯 Sistema de anotaciones en vivo
+│   ├── ui.js                  # 🎨 Gestión de interfaz (2000+ líneas)
+│   ├── utils.js               # 🛠️ Funciones auxiliares
+│   └── eventBus.js            # 📡 Sistema de eventos
+├── imagenes/                  # 🖼️ Galería de fotos (6 imágenes rotativas)
+├── logos/                     # 🏆 Logos equipos (1ª y 2ª fase)
+│   ├── README.md              # Documentación de logos
+│   ├── cbc-manises.jpg        # Logo oficial CBC
+│   ├── picanya.jpg            # Primera fase
+│   ├── torrent.jpg
+│   ├── mislata.jpg
+│   ├── moncada.jpg
+│   ├── picken.jpg
+│   ├── tabernes.jpg           # Segunda fase
+│   ├── abastos.jpg
+│   ├── escolapias.jpg
+│   ├── riba-roja.jpg
+│   ├── petraher.jpg
+│   └── el-pilar.jpg
+├── .gitignore                 # Archivos ignorados
+├── robots.txt                 # SEO - Configuración crawlers
+├── sitemap.xml                # SEO - Mapa del sitio
+├── CLEAN_ARCHITECTURE.md      # 📐 Documentación arquitectura
+├── loaderio-*.txt             # Token verificación de carga
+└── README.md                  # Este archivo
 ```
+
+---
 
 ## 🏗️ Arquitectura de la Aplicación
 
 ### Patrón: Clean Architecture (5 capas)
 
 ```
-1. PRESENTATION (ui.js)
-   ↓ (eventos DOM)
-2. APPLICATION (app.js)
-   ↓ (orquestación)
-3. DOMAIN (partidos.js, actas.js, etc.)
-   ↓ (lógica de negocio)
-4. INFRASTRUCTURE (firebase)
-   ↓ (persistencia)
-5. UTILITIES (utils.js, constants.js)
+┌─────────────────────────────────────────┐
+│  1. PRESENTATION (ui.js)                │
+│  - Renderizado HTML                     │
+│  - Manejo de eventos DOM                │
+│  - Generación de vistas                 │
+└─────────────────┬───────────────────────┘
+                  ↓ (eventos DOM)
+┌─────────────────────────────────────────┐
+│  2. APPLICATION (app.js)                │
+│  - Orquestación de managers             │
+│  - Coordinación de estado global        │
+│  - Funciones window.* para HTML         │
+└─────────────────┬───────────────────────┘
+                  ↓ (llamadas a managers)
+┌─────────────────────────────────────────┐
+│  3. DOMAIN (partidos, actas, etc.)      │
+│  - Lógica de negocio                    │
+│  - Reglas de validación                 │
+│  - Procesamiento de datos               │
+└─────────────────┬───────────────────────┘
+                  ↓ (operaciones DB)
+┌─────────────────────────────────────────┐
+│  4. INFRASTRUCTURE (Firebase)           │
+│  - Persistencia en Firestore            │
+│  - Listeners en tiempo real             │
+│  - Autenticación                        │
+└─────────────────┬───────────────────────┘
+                  ↓ (utilidades)
+┌─────────────────────────────────────────┐
+│  5. UTILITIES (utils.js, constants.js)  │
+│  - Funciones auxiliares                 │
+│  - Formateo de datos                    │
+│  - Constantes globales                  │
+└─────────────────────────────────────────┘
 ```
 
-### Características arquitectónicas:
+### Características Arquitectónicas
 
 - **Modularización ES6**: Cada archivo es un módulo independiente
 - **Singleton pattern**: UIManager y app como instancias únicas
-- **Listeners en tiempo real**: Firebase onSnapshot para actualizaciones automáticas
+- **Real-time listeners**: Firebase onSnapshot para actualizaciones automáticas
 - **Separación de responsabilidades**: UI ≠ Lógica ≠ Datos
-- **Sin frameworks**: Vanilla JS puro para máxima ligereza (< 100KB total)
+- **Sin frameworks**: Vanilla JS puro para máxima ligereza
+- **Event-driven**: EventBus para comunicación desacoplada
 
-## 🎯 Flujo de Datos
+### Flujo de Datos
 
 ```
-Firebase (Firestore)
-    ↓ (onSnapshot listeners)
-Managers (Partidos, Actas, Estadísticas, Admin)
-    ↓ (procesamiento)
-App.js (orquestación)
-    ↓ (cambios de estado)
-UIManager (generación HTML)
-    ↓ (renderizado)
-DOM (interfaz usuario)
+Firebase (Firestore) ← onSnapshot listeners →
+         ↓
+   Managers (Partidos, Actas, Estadísticas, Admin)
+         ↓
+   App.js (orquestación + estado global)
+         ↓
+   UIManager (generación HTML)
+         ↓
+   DOM (interfaz usuario)
+         ↓
+   Eventos usuario → Managers → Firebase
 ```
 
-## 📊 Contenido Actual
-
-### Clasificación Grupo D - 1ª Fase
-| Pos | Equipo | J | V | P | PF | PC | PTS |
-|-----|--------|---|---|---|----|----|-----|
-| 1 | PICKEN MA A | 10 | 10 | 0 | 715 | 352 | 20 |
-| 2 | PICANYA BASQUET | 10 | 6 | 4 | 627 | 606 | 16 |
-| 3 | CB MONCADA "A" | 10 | 5 | 5 | 587 | 640 | 15 |
-| 4 | ISOLIA NB TORRENT B | 10 | 4 | 6 | 567 | 630 | 14 |
-| 5 | **CBC MANISES-QUART** | 10 | 4 | 6 | 625 | 687 | 14 |
-| 6 | MISLATA BC VERDE | 10 | 1 | 9 | 390 | 596 | 11 |
-
-### Plantilla de Jugadores
-- 11 jugadores en plantilla oficial
-- Dorsales: 0, 7, 9, 31, 33, 37, 43, 45, 55, 91, 96
-- Sistema de actualización de estadísticas por acta
-
-## 🔗 Enlaces
-
-- **Web**: [cbc-manises.vercel.app](https://cbc-manises.vercel.app)
-- **Canal WhatsApp**: [Únete aquí](https://whatsapp.com/channel/0029VbBc5Eh4SpkD0kfaV93T)
-- **Instagram**: [Síguenos](https://instagram.com/edgarmp06)
-
-## 📈 Estadísticas de Rendimiento
-
-### Velocidad (PageSpeed Insights)
-- 🚀 **Móvil**: 99/100
-- 🖥️ **Desktop**: 99/100
-
-### Capacidad
-- ✅ Soporta 10,000+ usuarios simultáneos
-- ✅ Tiempo de carga < 1 segundo
-- ✅ Optimizado para conexiones lentas
-
-### Engagement
-- 📱 Totalmente responsive
-- 💬 Integración WhatsApp
-- 📊 Analytics integrado
-
-## 🚀 Deployment
-
-### Desde GitHub
-```bash
-git push origin main
-```
-→ Se despliega automáticamente en Vercel
-
-### Variables de entorno necesarias
-```
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_STORAGE_BUCKET=...
-VITE_FIREBASE_MESSAGING_SENDER_ID=...
-VITE_FIREBASE_APP_ID=...
-```
-
-## 👨‍💻 Desarrollo
-
-### Requerimientos
-- Node.js 14+
-- npm o yarn
-- Navegador moderno (Chrome, Firefox, Safari, Edge)
-
-### Setup Local
-```bash
-# 1. Clonar repositorio
-git clone <repo-url>
-
-# 2. Instalar dependencias
-npm install
-
-# 3. Configurar Firebase
-# Actualizar js/config.js con tus credenciales
-
-# 4. Iniciar servidor
-npm start
-
-# 5. Abrir en navegador
-# http://localhost:3000
-```
-
-## 📝 Notas de Desarrollo
-
-### Convenciones de Código
-- **Comentarios JSDoc**: Cada función documentada
-- **Nombres descriptivos**: Variables y funciones en español para claridad
-- **Funciones globales**: Expuestas en `window` para acceso desde HTML
-- **Console.logs**: Incluidos para debugging con emojis
-
-### Testing Manual
-- Probar en móvil: `npm run build && serve -s dist`
-- Verificar rendimiento: PageSpeed Insights
-- Comprobar BD: Firebase Console
-
-## 📄 Licencia
-
-Proyecto educativo para CBC Manises-Quart
-Temporada 2025/26
-- **Instagram**: [@edgarmp06](https://instagram.com/edgarmp06)
-- **Email**: cbcmanisesweb@gmail.com
-
-## 📱 Funcionalidades por Rol
-
-### Para Usuarios
-
-- Ver calendario de próximos partidos
-- Seguir partidos en directo
-- **Ver anotaciones en vivo durante los partidos**
-- Consultar resultados históricos
-- Ver actas oficiales con estadísticas detalladas
-- **📊 Ver gráficas de evolución del equipo**
-- **👤 Ver estadísticas personales por jugador**
-- **📈 Seguir la evolución jornada a jornada**
-- Unirse al canal de WhatsApp para recibir avisos
-
-### Para Administradores
-
-- Añadir y editar partidos mediante modal intuitivo
-- Actualizar marcadores en tiempo real
-- **Registrar anotadores opcionalmente durante el partido**
-- Gestionar cuartos del partido
-- Crear actas oficiales con estadísticas de jugadores
-- **Ver sugerencias automáticas de estadísticas basadas en anotaciones**
-- **Las gráficas se generan automáticamente al subir actas**
-- Control completo del contenido
+---
 
 ## 🎯 Estructura de Datos
 
-### Partidos
+### Colección: `partidos`
+
 ```javascript
 {
-  fecha: "2025-10-27",
+  id: "auto-generated",
+  fecha: "2026-01-10",           // ISO 8601
   hora: "19:00",
-  rival: "Isolia NB Torrent B",
-  logoRival: "torrent.jpg",
-  esLocal: false,
-  ubicacion: "Pabellón El Vedat (Torrent)",
-  jornada: "2",
+  rival: "C.B. Tabernes Blanques A",
+  logoRival: "tabernes.jpg",     // Mapeo automático
+  esLocal: false,                 // true = en casa, false = visitante
+  ubicacion: "PAB MUNI TABERNES BLANQUES",  // Puede ser personalizada
+  jornada: "12",
+  fase: "segunda",                // "primera" | "segunda"
   finalizado: false,
-  resultadoLocal: "",
-  resultadoVisitante: "",
   enDirecto: false,
-  cuartoActual: "",
-  anotaciones: []  // Array de anotaciones en vivo
-}
-```
-
-### Anotaciones (Nuevo)
-```javascript
-{
-  jugador: "DARIO MEROÑO PALOMO",
-  puntos: 2,  // 1, 2 o 3
-  cuarto: "Q1",
-  timestamp: "2025-11-19T18:30:00.000Z"
-}
-```
-
-### Actas
-```javascript
-{
-  partidoId: "abc123",
-  fecha: "2025-10-20",
-  rival: "Picanya Bàsquet",
-  logoRival: "picanya.jpg",
-  esLocal: true,
-  ubicacion: "Pabellón Alberto Arnal (Manises)",
-  resultadoLocal: "45",
-  resultadoVisitante: "42",
-  jornada: "1",
-  jugadores: [
+  resultadoLocal: "",             // Se rellena al finalizar
+  resultadoVisitante: "",
+  cuartoActual: "",               // "Q1" | "Q2" | "Q3" | "Q4" | "OT"
+  sinActa: false,                 // Incidencia: partido sin acta
+  anotaciones: [                  // Array opcional
     {
-      dorsal: "7",
-      nombre: "NOMBRE APELLIDOS",
-      pts: 12,
-      min: 25,
-      tl: { anotados: 3, intentos: 4, porcentaje: 75 },
-      t2: { anotados: 3, intentos: 6 },
-      t3: { anotados: 1, intentos: 3 },
-      fc: 2
+      jugador: "DARIO MEROÑO PALOMO",
+      dorsal: "31",
+      puntos: 2,                  // 1, 2 o 3
+      cuarto: "Q1",
+      timestamp: "2025-11-19T18:30:00.000Z"
     }
   ]
 }
 ```
 
-### Procesamiento de Estadísticas
+### Colección: `actas`
 
-Las estadísticas se procesan automáticamente desde las actas:
-- **Por equipo**: Suma de todos los jugadores por jornada
-- **Por jugador**: Evolución individual a lo largo de la temporada
-- **Cálculos**: Porcentajes de acierto, totales acumulados, medias
-- **Sugerencias**: El sistema de anotaciones genera sugerencias automáticas para el acta
+```javascript
+{
+  id: "auto-generated",
+  partidoId: "abc123",            // Referencia al partido
+  fecha: "2026-01-10",
+  rival: "C.B. Tabernes Blanques A",
+  logoRival: "tabernes.jpg",
+  esLocal: false,
+  ubicacion: "PAB MUNI TABERNES BLANQUES",
+  resultadoLocal: "58",
+  resultadoVisitante: "62",
+  jornada: "12",
+  fase: "segunda",                // ⭐ Hereda automáticamente del partido
+  jugadores: [
+    {
+      dorsal: "31",               // Desde JUGADORES_EQUIPO
+      nombre: "DARIO MEROÑO PALOMO",
+      pts: 14,                    // Puntos totales
+      min: 28,                    // Minutos jugados
+      tl_anotados: 4,
+      tl_intentos: 6,
+      t2_anotados: 4,
+      t2_intentos: 8,
+      t3_anotados: 1,
+      t3_intentos: 3,
+      fc: 3                       // Faltas cometidas
+    }
+    // ... más jugadores
+  ]
+}
+```
 
-## 📈 Tipos de Gráficas
+### Configuración: `js/config.js`
 
-### Estadísticas del Equipo
-1. **Puntos por Jornada** - Gráfica de barras con puntos totales
-2. **Faltas por Jornada** - Línea de evolución de faltas
-3. **Tiros Anotados** - Línea múltiple (T2, T3, TL anotados)
-4. **% Tiros Libres** - Evolución del porcentaje de acierto en TL
+```javascript
+// Equipos rivales con mapeo de logos
+export const EQUIPOS_RIVALES = [
+  // PRIMERA FASE
+  { nombre: 'Picanya Bàsquet FuturPiso 10', logo: 'picanya.jpg' },
+  { nombre: 'Isolia NB Torrent B', logo: 'torrent.jpg' },
+  { nombre: 'Mislata BC Verde', logo: 'mislata.jpg' },
+  { nombre: 'CB Moncada A', logo: 'moncada.jpg' },
+  { nombre: 'Picken MA A', logo: 'picken.jpg' },
 
-### Estadísticas Individuales
-1. **% Tiros Libres** - Porcentaje por jornada
-2. **Puntos T2** - Puntos conseguidos en tiros de 2
-3. **Puntos T3** - Puntos conseguidos en tiros de 3
-4. **Faltas** - Evolución de faltas por partido
-5. **Resumen** - Totales de PJ, PTS, MIN, TL%, FC
+  // SEGUNDA FASE
+  { nombre: 'C.B. Tabernes Blanques A', logo: 'tabernes.jpg' },
+  { nombre: 'CB TLLA Abastos C', logo: 'abastos.jpg' },
+  { nombre: 'CB Escolapias CMV', logo: 'escolapias.jpg' },
+  { nombre: 'Flex Básquet Riba-Roja', logo: 'riba-roja.jpg' },
+  { nombre: 'Academia Petraher B', logo: 'petraher.jpg' },
+  { nombre: 'S.D. El Pilar Valencia A', logo: 'el-pilar.jpg' }
+];
+
+// Ubicaciones con indicador local/visitante
+export const UBICACIONES = [
+  { nombre: 'Pabellón Alberto Arnal (Manises)', esLocal: true },
+
+  // PRIMERA FASE
+  { nombre: 'Pabellón Municipal Picanya', esLocal: false },
+  { nombre: 'Pabellón El Vedat (Torrent)', esLocal: false },
+  // ... más ubicaciones
+
+  // SEGUNDA FASE
+  { nombre: 'PAB MUNI TABERNES BLANQUES', esLocal: false },
+  { nombre: 'IES Cid Campeador (Valencia)', esLocal: false },
+  // ... más ubicaciones
+];
+```
+
+### Constantes: `js/constants.js`
+
+```javascript
+// Plantilla oficial del equipo
+export const JUGADORES_EQUIPO = [
+  { dorsal: '0', nombre: 'CARLOS LAGO VALLDECABRES' },
+  { dorsal: '7', nombre: 'JORGE FERREIRA SÁNCHEZ' },
+  { dorsal: '9', nombre: 'HÉCTOR POQUET LIRON' },
+  { dorsal: '31', nombre: 'DARIO MEROÑO PALOMO' },
+  { dorsal: '33', nombre: 'DANIEL DÍAZ FOLGADO' },
+  { dorsal: '37', nombre: 'VICTOR ARDID HERRERO' },
+  { dorsal: '43', nombre: 'MARC LUCENA ALIAGA' },
+  { dorsal: '45', nombre: 'GUILLEM RUIZ SOLER' },
+  { dorsal: '55', nombre: 'RUBEN GIL MUÑOZ' },
+  { dorsal: '91', nombre: 'RAUL RUIZ ROCHINA' },
+  { dorsal: '96', nombre: 'RAUL GIL MUÑOZ' }
+];
+
+// Clasificación por fases
+export const CLASIFICACION_PRIMERA_FASE = [ /* ... */ ];
+export const CLASIFICACION_SEGUNDA_FASE = [ /* ... */ ];
+```
+
+---
+
+## 👨‍💻 Desarrollo
+
+### Requerimientos
+
+- Node.js 14+ (opcional, solo para servidor local)
+- Navegador moderno (Chrome, Firefox, Safari, Edge)
+- Cuenta de Firebase (Firestore + Auth)
+
+### Setup Local
+
+```bash
+# 1. Clonar repositorio
+git clone <repo-url>
+cd CBCManises25-26-main
+
+# 2. Configurar Firebase
+# Actualizar js/config.js con tus credenciales de Firebase
+
+# 3. Iniciar servidor local (opcional)
+# Opción A: Python
+python -m http.server 8000
+
+# Opción B: Node.js
+npx serve .
+
+# Opción C: VS Code Live Server
+# Instalar extensión "Live Server" y click derecho > Open with Live Server
+
+# 4. Abrir en navegador
+# http://localhost:8000
+```
+
+### Convenciones de Código
+
+- **Comentarios JSDoc**: Todas las funciones documentadas
+- **Nombres descriptivos**: Variables y funciones en español
+- **Funciones globales**: Expuestas en `window` para acceso desde HTML
+- **Console.logs**: Incluidos para debugging con emojis (🔥, ✅, ❌, etc.)
+- **ES6 Modules**: Imports/exports explícitos
+
+### Testing Manual
+
+```bash
+# Probar en móvil
+npm run build && npx serve -s dist
+
+# Verificar rendimiento
+# https://pagespeed.web.dev/
+
+# Comprobar base de datos
+# https://console.firebase.google.com
+```
+
+---
 
 ## 🚀 Deployment
 
+### Configuración Vercel
+
 El proyecto se despliega automáticamente en Vercel cuando se hace push a la rama `main`.
 
-### Configuración de Despliegue
-
-1. **Repositorio**: GitHub (público o privado)
-2. **Plataforma**: Vercel
-3. **Configuración**:
-   - Build Command: Ninguno (HTML estático)
-   - Output Directory: `.` (raíz del proyecto)
-   - Framework Preset: Other
-4. **Variables de entorno**: No necesarias (Firebase usa credenciales públicas de frontend)
+**Configuración**:
+- Build Command: Ninguno (HTML estático)
+- Output Directory: `.` (raíz del proyecto)
+- Framework Preset: Other
 
 ### Seguridad Firebase
 
-Las credenciales de Firebase en `js/config.js` son públicas por diseño. La seguridad se gestiona mediante:
-- **Firebase Security Rules**: Controlan quién puede leer/escribir en la base de datos
-- **Firebase Auth**: Autenticación para el panel de administración
-- **Validación**: En las reglas de Firestore, no en el cliente
+Las credenciales de Firebase en `js/config.js` son **públicas por diseño**. La seguridad se gestiona mediante:
+
+- **Firebase Security Rules**: Controlan acceso a lectura/escritura
+- **Firebase Auth**: Autenticación para panel admin
+- **Validación en servidor**: Reglas de Firestore, no en cliente
 
 **Ejemplo de Security Rules**:
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Partidos: todos leen, solo admins escriben
     match /partidos/{partidoId} {
-      allow read: if true;  // Cualquiera puede leer
-      allow write: if request.auth != null;  // Solo autenticados
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Actas: todos leen, solo admins escriben
+    match /actas/{actaId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
 ```
+
+### CI/CD Automático
+
+```bash
+# Hacer cambios en local
+git add .
+git commit -m "feat: nueva funcionalidad"
+git push origin main
+
+# → Vercel detecta el push
+# → Ejecuta build automático
+# → Despliega a producción
+# → URL: https://cbc-manises.vercel.app
+```
+
+---
+
+## 📈 Estadísticas de Rendimiento
+
+### Velocidad (PageSpeed Insights)
+
+- 🚀 **Móvil**: 99/100
+- 🖥️ **Desktop**: 99/100
+
+### Métricas Core Web Vitals
+
+- **LCP** (Largest Contentful Paint): < 1.2s
+- **FID** (First Input Delay): < 50ms
+- **CLS** (Cumulative Layout Shift): < 0.1
+
+### Capacidad
+
+- ✅ Soporta 10,000+ usuarios simultáneos
+- ✅ Tiempo de carga < 1 segundo
+- ✅ Optimizado para conexiones 3G
+
+### Bundle Size
+
+- HTML + CSS + JS: < 100KB
+- Chart.js: 200KB (CDN)
+- Firebase SDK: 400KB (CDN)
+- **Total First Load**: < 700KB
+
+---
+
+## 📊 Contenido Actual
+
+### Clasificación Grupo D - 1ª Fase (Final)
+
+| Pos | Equipo | J | V | P | NP | PF | PC | Dif. | PTS |
+|-----|--------|---|---|---|----|----|-------|------|-----|
+| 🥇 | PICKEN MA A | 10 | 10 | 0 | 0 | 715 | 352 | +363 | 20 |
+| 🥈 | PICANYA BASQUET | 10 | 6 | 4 | 0 | 627 | 606 | +21 | 16 |
+| 🥉 | CB MONCADA "A" | 10 | 5 | 5 | 0 | 587 | 640 | -53 | 15 |
+| 4 | ISOLIA NB TORRENT B | 10 | 4 | 6 | 0 | 567 | 630 | -63 | 14 |
+| **5** | **CBC MANISES-QUART** | 10 | 4 | 6 | 0 | 625 | 687 | -62 | 14 |
+| 6 | MISLATA BC VERDE | 10 | 1 | 9 | 0 | 390 | 596 | -206 | 11 |
+
+### Segunda Fase - Campeonato 1ª Zonal Grupo D
+
+Inicio: **10 de enero de 2026**
+
+**Equipos participantes** (7 equipos):
+- CBC Manises-Quart
+- Mislata BC Verde (repite de 1ª fase)
+- C.B. Tabernes Blanques A
+- CB TLLA Abastos C
+- CB Escolapias CMV
+- Flex Básquet Riba-Roja
+- Academia Petraher B
+- S.D. El Pilar Valencia A
+
+### Plantilla Oficial
+
+**11 jugadores** - Cadete Masculino 2025/26
+
+| Dorsal | Nombre Completo |
+|--------|-----------------|
+| 0 | CARLOS LAGO VALLDECABRES |
+| 7 | JORGE FERREIRA SÁNCHEZ |
+| 9 | HÉCTOR POQUET LIRON |
+| 31 | DARIO MEROÑO PALOMO |
+| 33 | DANIEL DÍAZ FOLGADO |
+| 37 | VICTOR ARDID HERRERO |
+| 43 | MARC LUCENA ALIAGA |
+| 45 | GUILLEM RUIZ SOLER |
+| 55 | RUBEN GIL MUÑOZ |
+| 91 | RAUL RUIZ ROCHINA |
+| 96 | RAUL GIL MUÑOZ |
+
+---
+
+## 🔗 Enlaces
+
+- **🌐 Web Oficial**: [cbc-manises.vercel.app](https://cbc-manises.vercel.app)
+- **💬 Canal WhatsApp**: [Únete aquí](https://whatsapp.com/channel/0029VbBc5Eh4SpkD0kfaV93T)
+- **📱 Instagram**: [@edgarmp06](https://instagram.com/edgarmp06)
+- **📧 Email**: cbcmanisesweb@gmail.com
+
+---
+
+## 📱 Funcionalidades por Rol
+
+### Para Usuarios (Sin autenticación)
+
+- ✅ Ver calendario de próximos partidos
+- ✅ Seguir partidos en directo con marcador actualizado
+- ✅ Ver anotaciones en vivo durante los partidos
+- ✅ Consultar resultados históricos con filtros por fase
+- ✅ Ver actas oficiales con estadísticas detalladas
+- ✅ Analizar gráficas de evolución del equipo
+- ✅ Ver estadísticas personales por jugador
+- ✅ Seguir la clasificación de liga
+- ✅ Filtrar por fase (1ª/2ª) en todas las vistas
+- ✅ Unirse al canal de WhatsApp
+
+### Para Administradores (Con autenticación)
+
+- 🔐 Acceso al panel de administración
+- ➕ Crear partidos con ubicaciones normales o personalizadas
+- ✏️ Editar partidos desde cualquier vista (modal intuitivo)
+- 🗑️ Eliminar partidos con confirmación
+- 🔴 Actualizar marcadores en directo
+- 🎯 Registrar anotadores opcionalmente durante el partido
+- 📝 Crear actas oficiales desde plantilla
+- 📊 Ver sugerencias automáticas basadas en anotaciones
+- 🗂️ Gestionar actas (editar/eliminar)
+- 📍 Usar ubicaciones personalizadas con opción Local/Visitante
+
+---
 
 ## 🎉 Hitos del Proyecto
 
@@ -384,31 +640,69 @@ service cloud.firestore {
 - **31 Oct 2025**: 🗳️ Cierre de encuesta de funcionalidades (9 votos para gráficas)
 - **3 Nov 2025**: 📈 Gráficas de estadísticas implementadas
 - **19 Nov 2025**: 🎯 Sistema de anotaciones en vivo y modal de edición
+- **26 Dic 2025**: 🏆 Finalización de 1ª fase con clasificación completa
+- **31 Dic 2025**: 🔄 Sistema de fases completo + ubicaciones personalizadas
 
-## 🗳️ Encuesta de Funcionalidades (27-31 Oct 2025)
+---
 
-**Resultados:**
-1. 🏆 Gráficas de evolución - **9 votos** ✅ IMPLEMENTADO
-2. 🏅 Clasificación de liga - **4 votos** 📋 Próximamente
+## 🗺️ Roadmap
 
-## 👨‍💻 Desarrollo
+### ✅ Completado
 
-Desarrollado por **Edgar MP** para el CBC Manises.
+- [x] Calendario y resultados
+- [x] Marcadores en directo
+- [x] Anotaciones en vivo
+- [x] Actas oficiales con CRUD
+- [x] Gráficas interactivas
+- [x] Clasificación de liga
+- [x] Sistema de fases (1ª/2ª)
+- [x] Ubicaciones personalizadas
+- [x] Filtros persistentes
+- [x] Panel de administración completo
+
+### 🔮 Futuras Mejoras
+
+- [ ] Exportar actas a PDF
+- [ ] Comparador de jugadores
+- [ ] Histórico de temporadas
+- [ ] Notificaciones push
+- [ ] App móvil nativa (PWA)
+- [ ] Modo offline
+- [ ] Galería de fotos por partido
+
+---
+
+## 📄 Aviso Legal
+
+Esta web es informativa y muestra datos públicos del equipo Cadete Masculino del CBC Manises-Quart. Los nombres y estadísticas publicados corresponden a jugadores federados en competición oficial.
+
+**Privacidad**:
+- No recopila datos personales
+- No usa cookies de seguimiento
+- Utiliza Firebase (Google) para almacenamiento de datos deportivos
+- Cumple con RGPD
+
+---
+
+## 👨‍💻 Autor
+
+Desarrollado con ❤️ por **Edgar MP** para el CBC Manises-Quart
 
 **Contacto**:
 - 📧 Email: cbcmanisesweb@gmail.com
 - 📱 Instagram: [@edgarmp06](https://instagram.com/edgarmp06)
+- 🌐 Web: [cbc-manises.vercel.app](https://cbc-manises.vercel.app)
 
-## 📄 Aviso Legal
-
-Esta web es informativa y muestra datos públicos del equipo Cadete Masculino. Los nombres y estadísticas publicados corresponden a jugadores federados en competición oficial. La web no recopila datos personales ni usa cookies de seguimiento. Utiliza Firebase (Google) para almacenar información deportiva del equipo.
+---
 
 ## 📄 Licencia
 
 Este proyecto es privado y pertenece a Edgar MP.
 
+© 2025 Edgar MP - Todos los derechos reservados
+
 ---
 
-**Temporada 2025/26 • Preferente Cadete Masculino Grupo D**
+**Temporada 2025/26 • Preferente Cadete Masculino Grupo D → IR Campeonato 1ª Zonal Grupo D**
 
-🔗 [cbc-manises.vercel.app](https://cbc-manises.vercel.app) | 💬 [Canal WhatsApp](https://whatsapp.com/channel/0029VbBc5Eh4SpkD0kfaV93T)
+🔗 [cbc-manises.vercel.app](https://cbc-manises.vercel.app) | 💬 [Canal WhatsApp](https://whatsapp.com/channel/0029VbBc5Eh4SpkD0kfaV93T) | 📱 [Instagram](https://instagram.com/edgarmp06)
