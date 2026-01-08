@@ -2,7 +2,7 @@
 
 > Plataforma integral de seguimiento, estadísticas y administración para el equipo Cadete Masculino - Temporada 2025/26
 
-**Última actualización:** 31 de diciembre de 2025
+**Última actualización:** 8 de enero de 2026
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://cbc-manises.vercel.app)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase-orange?logo=firebase)](https://firebase.google.com)
@@ -87,12 +87,45 @@ Las actas calculan automáticamente:
 
 ### 🏅 Clasificación de Liga
 
-#### Tabla Completa por Fases
+#### 📊 Sistema de Clasificación Editable (Firebase)
+- **Gestión completa desde Firebase** - Datos persistentes en tiempo real
+- **Edición inline para administradores** - Sin modales, edición directa en la tabla
+- **Migración automática** - Botón de migración de datos de 1ª fase desde constants.js
+- **Creación dinámica** - Añadir equipos manualmente con formulario inline
+- **Auto-ordenamiento** - Función de corrección automática por puntos (PTS)
+
+#### ✏️ Funcionalidades de Administración
+- **➕ Añadir equipo**: Botón inline que crea fila editable en la tabla
+- **✏️ Editar inline**: Click en lápiz → fila se convierte en inputs → guardar/cancelar
+- **⬆️⬇️ Cambiar posición**: Botones para subir/bajar equipos manualmente
+- **🗑️ Eliminar equipo**: Con confirmación de seguridad
+- **🔧 Auto-ordenar**: Función `window.corregirPosicionesClasificacion(fase)` ordena por puntos
+
+#### 🎯 Ordenamiento Inteligente
+Dos opciones para reordenar la clasificación:
+
+**Opción A - Manual (Botones ⬆️⬇️)**:
+- Admins pueden subir/bajar equipos uno a uno
+- Cambios inmediatos en Firebase
+- Control total sobre el orden
+
+**Opción B - Automático (Consola)**:
+```javascript
+// Ordenar por puntos automáticamente
+await window.corregirPosicionesClasificacion('primera')
+await window.corregirPosicionesClasificacion('segunda')
+```
+- Ordena por puntos (PTS) descendente
+- Desempata por diferencia de gol (PF - PC)
+- Actualiza todas las posiciones en Firebase
+- Recarga la tabla automáticamente
+
+#### 📋 Tabla Completa por Fases
 - **1ª Fase**: Clasificación con todas las columnas (J, V, P, NP, PF, PC, Dif., PTS)
 - **2ª Fase**: Sistema independiente para el campeonato zonal
 - Resaltado especial para CBC Manises-Quart
 - Diferencia de puntos con colores (verde/rojo)
-- Actualización manual desde constants.js
+- **Estado vacío**: Pantalla con opciones de migración o añadir manual
 
 ### 🎨 Interfaz y UX
 
@@ -178,6 +211,7 @@ CBCManises25-26-main/
 │   ├── constants.js           # 📊 Constantes (JUGADORES_EQUIPO, CLASIFICACION)
 │   ├── partidos.js            # 🏀 Gestor de partidos (CRUD + listeners)
 │   ├── actas.js               # 📝 Gestor de actas (CRUD + listeners)
+│   ├── clasificacion.js       # 🏅 Gestor de clasificación (CRUD + auto-ordenamiento)
 │   ├── estadisticas.js        # 📈 Procesamiento y gráficas
 │   ├── admin.js               # 🔐 Panel admin + autenticación
 │   ├── anotaciones.js         # 🎯 Sistema de anotaciones en vivo
@@ -381,6 +415,40 @@ export const UBICACIONES = [
 ];
 ```
 
+### Colección: `clasificacion` ⭐ NUEVO
+
+```javascript
+{
+  id: "auto-generated",
+  equipo: "PICKEN MA A",            // Nombre del equipo
+  fase: "primera",                   // "primera" | "segunda"
+  posicion: 1,                       // Posición en la tabla
+  j: 10,                             // Partidos jugados
+  v: 10,                             // Victorias
+  p: 0,                              // Derrotas
+  np: 0,                             // No presentado
+  pf: 715,                           // Puntos a favor
+  pc: 352,                           // Puntos en contra
+  pts: 20,                           // Puntos de clasificación
+  timestamp: "2025-01-05T12:00:00.000Z"  // Fecha de creación
+}
+```
+
+**Índice compuesto requerido**:
+- Campos: `fase` (Ascending) + `posicion` (Ascending)
+- Necesario para consultas con `where('fase', '==', X)` + `orderBy('posicion')`
+
+**Funciones de gestión**:
+- `window.migrarClasificacionAFirebase()` - Migración automática de 1ª fase
+- `window.mostrarFormAñadirEquipoInline(fase)` - Añadir equipo manualmente
+- `window.editarEquipoInline(id)` - Editar equipo inline
+- `window.guardarEdicionInline(id)` - Guardar cambios
+- `window.cancelarEdicionInline(id)` - Cancelar edición
+- `window.subirPosicionEquipo(id)` - Subir posición (swap con anterior)
+- `window.bajarPosicionEquipo(id)` - Bajar posición (swap con siguiente)
+- `window.eliminarEquipoClasificacionInline(id)` - Eliminar equipo
+- `window.corregirPosicionesClasificacion(fase)` - Auto-ordenar por puntos
+
 ### Constantes: `js/constants.js`
 
 ```javascript
@@ -399,9 +467,9 @@ export const JUGADORES_EQUIPO = [
   { dorsal: '96', nombre: 'RAUL GIL MUÑOZ' }
 ];
 
-// Clasificación por fases
-export const CLASIFICACION_PRIMERA_FASE = [ /* ... */ ];
-export const CLASIFICACION_SEGUNDA_FASE = [ /* ... */ ];
+// Clasificación por fases (DEPRECATED - Usar colección Firebase 'clasificacion')
+export const CLASIFICACION_PRIMERA_FASE = [ /* migrado a Firebase */ ];
+export const CLASIFICACION_SEGUNDA_FASE = [ /* migrado a Firebase */ ];
 ```
 
 ---
@@ -497,9 +565,23 @@ service cloud.firestore {
       allow read: if true;
       allow write: if request.auth != null;
     }
+
+    // Clasificación: todos leen, solo admins escriben
+    match /clasificacion/{clasificacionId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
   }
 }
 ```
+
+**Índices compuestos requeridos en Firestore**:
+1. **Colección `clasificacion`**:
+   - Campos: `fase` (Ascending) + `posicion` (Ascending)
+   - Crear en: Firebase Console → Firestore Database → Indexes
+   - Necesario para consultas filtradas por fase ordenadas por posición
+
+📝 **Ver instrucciones completas**: [INSTRUCCIONES_FIREBASE_RULES.md](INSTRUCCIONES_FIREBASE_RULES.md)
 
 ### CI/CD Automático
 
@@ -628,6 +710,9 @@ Inicio: **10 de enero de 2026**
 - 📊 Ver sugerencias automáticas basadas en anotaciones
 - 🗂️ Gestionar actas (editar/eliminar)
 - 📍 Usar ubicaciones personalizadas con opción Local/Visitante
+- 🏅 **Gestionar clasificación inline** (añadir, editar, reordenar, eliminar equipos)
+- 🔧 **Auto-ordenar clasificación** por puntos con función de consola
+- 📤 **Migrar datos** de constants.js a Firebase con un solo click
 
 ---
 
@@ -642,6 +727,8 @@ Inicio: **10 de enero de 2026**
 - **19 Nov 2025**: 🎯 Sistema de anotaciones en vivo y modal de edición
 - **26 Dic 2025**: 🏆 Finalización de 1ª fase con clasificación completa
 - **31 Dic 2025**: 🔄 Sistema de fases completo + ubicaciones personalizadas
+- **5 Ene 2026**: 🏅 Sistema de clasificación editable inline con Firebase
+- **8 Ene 2026**: 🔧 Función de auto-ordenamiento de clasificación por puntos
 
 ---
 
@@ -659,6 +746,9 @@ Inicio: **10 de enero de 2026**
 - [x] Ubicaciones personalizadas
 - [x] Filtros persistentes
 - [x] Panel de administración completo
+- [x] **Clasificación editable inline** (Firebase) ⭐ NUEVO
+- [x] **Auto-ordenamiento por puntos** ⭐ NUEVO
+- [x] **Migración automática de datos** ⭐ NUEVO
 
 ### 🔮 Futuras Mejoras
 
