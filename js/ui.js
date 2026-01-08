@@ -949,11 +949,7 @@ export class UIManager {
         const partidosCalendario = partidos
             .filter(p => !p.finalizado)
             .sort((a, b) => {
-                if (a.jornada && b.jornada) {
-                    const jornadaA = parseInt(a.jornada);
-                    const jornadaB = parseInt(b.jornada);
-                    if (jornadaA !== jornadaB) return jornadaA - jornadaB;
-                }
+                // Ordenar por fecha (más próximo primero)
                 return new Date(a.fecha) - new Date(b.fecha);
             });
 
@@ -969,11 +965,7 @@ export class UIManager {
                 return (p.fase || 'primera') === filtroFaseActual;
             })
             .sort((a, b) => {
-                if (a.jornada && b.jornada) {
-                    const jornadaA = parseInt(a.jornada);
-                    const jornadaB = parseInt(b.jornada);
-                    if (jornadaA !== jornadaB) return jornadaB - jornadaA;
-                }
+                // Ordenar por fecha (más reciente primero)
                 return new Date(b.fecha) - new Date(a.fecha);
             });
 

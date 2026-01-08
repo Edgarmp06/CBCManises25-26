@@ -1,6 +1,6 @@
 # 📁 JavaScript - Módulos del Proyecto
 
-**Última actualización:** 8 de enero de 2026
+**Última actualización:** 9 de enero de 2026
 
 Arquitectura modular del sistema de gestión deportiva CBC Manises-Quart.
 
@@ -319,6 +319,7 @@ await window.corregirPosicionesClasificacion('segunda');
 - **Formularios** con validaciones
 - **Manejo de eventos DOM**
 - **Actualización reactiva** cuando cambian los datos
+- **Ordenación inteligente de partidos** por fecha cronológica ⭐ NUEVO
 
 **Métodos principales:**
 ```javascript
@@ -331,6 +332,24 @@ generarClasificacion(fase)
 generarPanelAdmin(estado)
 mostrarModalEditarPartido(partido)
 ```
+
+**Ordenación de Partidos (líneas 949-970):**
+
+**Partidos próximos** (`!finalizado`):
+- Ordenados por fecha cronológica ascendente (más cercano primero)
+- Código: `.sort((a, b) => new Date(a.fecha) - new Date(b.fecha))`
+- Ejemplo: Si J2 es el 17 Ene y J1 es el 21 Ene → J2 aparece primero
+
+**Partidos pasados** (`finalizado`):
+- Ordenados por fecha cronológica descendente (más reciente primero)
+- Código: `.sort((a, b) => new Date(b.fecha) - new Date(a.fecha))`
+- Filtro adicional por fase (primera/segunda/todas)
+
+**Ventajas:**
+- ✅ Gestión automática de aplazamientos
+- ✅ Partidos fuera de orden jornada aparecen en orden real
+- ✅ Ideal para 2ª fase con 14 jornadas flexibles
+- ✅ El "próximo partido" es siempre el más cercano cronológicamente
 
 **Tamaño:** 2000+ líneas (archivo más grande del proyecto)
 
