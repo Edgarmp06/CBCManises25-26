@@ -1,6 +1,6 @@
 # 📁 JavaScript - Módulos del Proyecto
 
-**Última actualización:** 31 de diciembre de 2025
+**Última actualización:** 8 de enero de 2026
 
 Arquitectura modular del sistema de gestión deportiva CBC Manises-Quart.
 
@@ -236,6 +236,78 @@ async eliminarAnotacion(partidoId, index, anotacionesActuales)
 
 ---
 
+### `clasificacion.js` - Gestor de Clasificación 🏅 ⭐ NUEVO
+
+**Responsabilidad:** CRUD completo de clasificación + auto-ordenamiento
+
+**Funcionalidades:**
+- **Crear equipos** con validaciones
+- **Actualizar equipos** (estadísticas y posición)
+- **Eliminar equipos** con confirmación
+- **Listeners en tiempo real** - Sincronización automática
+- **Consultas filtradas** - Por fase (primera/segunda)
+- **Auto-ordenamiento** - Función de corrección por puntos
+
+**Métodos principales:**
+```javascript
+async añadirEquipoClasificacion(data)
+async actualizarEquipoClasificacion(id, data)
+async eliminarEquipoClasificacion(id)
+obtenerClasificaciones(fase, callback) // con listener onSnapshot
+async obtenerClasificacionesUnaVez(fase) // sin listener
+detenerListener()
+```
+
+**Datos manejados:**
+- equipo (nombre), fase (primera/segunda), posicion
+- j (jugados), v (victorias), p (derrotas), np (no presentado)
+- pf (puntos a favor), pc (puntos en contra)
+- pts (puntos de clasificación)
+- timestamp (fecha de creación/modificación)
+
+**Estructura de documento Firebase:**
+```javascript
+{
+  id: "auto-generated",
+  equipo: "PICKEN MA A",
+  fase: "primera",
+  posicion: 1,
+  j: 10,
+  v: 10,
+  p: 0,
+  np: 0,
+  pf: 715,
+  pc: 352,
+  pts: 20,
+  timestamp: "2025-01-05T12:00:00.000Z"
+}
+```
+
+**Índice compuesto requerido:**
+- Campos: `fase` (Ascending) + `posicion` (Ascending)
+- Necesario para: `where('fase', '==', X)` + `orderBy('posicion')`
+
+**Funciones globales asociadas (en app.js):**
+- `window.migrarClasificacionAFirebase()` - Migración 1ª fase
+- `window.mostrarFormAñadirEquipoInline(fase)` - Añadir manual
+- `window.editarEquipoInline(id)` - Modo edición
+- `window.guardarEdicionInline(id)` - Guardar cambios
+- `window.cancelarEdicionInline(id)` - Cancelar edición
+- `window.subirPosicionEquipo(id)` - Subir en tabla
+- `window.bajarPosicionEquipo(id)` - Bajar en tabla
+- `window.eliminarEquipoClasificacionInline(id)` - Eliminar
+- `window.corregirPosicionesClasificacion(fase)` - Auto-ordenar ⭐
+
+**Auto-Ordenamiento:**
+```javascript
+// Ordena por puntos (PTS) descendente
+// Desempata por diferencia de gol (PF - PC)
+await window.corregirPosicionesClasificacion('primera');
+await window.corregirPosicionesClasificacion('segunda');
+```
+
+---
+
 ### `ui.js` - Gestión de Interfaz 🎨
 
 **Responsabilidad:** Renderizado de todas las vistas y componentes
@@ -426,18 +498,19 @@ eventBus.on('partidoActualizado', (data) => {
 | Archivo | Líneas | Tamaño | Responsabilidad |
 |---------|--------|--------|-----------------|
 | ui.js | ~2000 | ~80KB | Interfaz completa |
-| app.js | ~400 | ~15KB | Orquestación |
+| app.js | ~830 | ~32KB | Orquestación + funciones globales |
 | partidos.js | ~200 | ~8KB | CRUD partidos |
 | actas.js | ~150 | ~6KB | CRUD actas |
+| clasificacion.js | ~200 | ~8KB | CRUD clasificación ⭐ NUEVO |
 | estadisticas.js | ~300 | ~12KB | Gráficas |
-| admin.js | ~100 | ~4KB | Autenticación |
+| admin.js | ~210 | ~8KB | Autenticación + re-render |
 | anotaciones.js | ~80 | ~3KB | Anotaciones |
 | constants.js | ~300 | ~12KB | Constantes |
 | config.js | ~50 | ~2KB | Configuración |
 | utils.js | ~50 | ~2KB | Utilidades |
 | eventBus.js | ~30 | ~1KB | Eventos |
 
-**Total:** ~3700 líneas, ~145KB
+**Total:** ~4400 líneas, ~174KB (+700 líneas, +29KB por sistema de clasificación)
 
 ---
 

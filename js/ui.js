@@ -1983,6 +1983,45 @@ export class UIManager {
                         <p class="text-gray-500 italic">No hay actas registradas aún.</p>
                     `}
                 </div>
+
+                <hr class="my-8">
+
+                <!-- Gestión de Clasificación -->
+                <div>
+                    <h4 class="text-xl font-semibold text-orange-600 mb-4">🏆 Gestión de Clasificación</h4>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                        <p class="text-sm text-blue-800 mb-2">
+                            <strong>ℹ️ Edición inline activada:</strong> Ahora puedes editar la clasificación directamente desde la pestaña "🏅 Clasificación" cuando estés logueado como admin.
+                        </p>
+                        <p class="text-xs text-blue-700">
+                            Ve a la pestaña Clasificación para añadir, editar, eliminar equipos y cambiar posiciones con un solo clic.
+                        </p>
+                    </div>
+
+                    <!-- Selector de fase -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fase</label>
+                        <select id="fase-clasificacion-eliminar" class="w-full border rounded px-3 py-2">
+                            <option value="primera">🟡 Primera Fase</option>
+                            <option value="segunda">🔵 Segunda Fase</option>
+                        </select>
+                    </div>
+
+                    <!-- Botón para eliminar toda la clasificación -->
+                    <div class="bg-red-50 border border-red-300 rounded p-4">
+                        <h5 class="font-semibold text-red-800 mb-2">⚠️ Zona de Peligro</h5>
+                        <p class="text-sm text-red-700 mb-4">
+                            Esta acción eliminará <strong>TODOS</strong> los equipos de la clasificación de la fase seleccionada. Esta operación no se puede deshacer.
+                        </p>
+                        <button
+                            onclick="window.eliminarClasificacionCompletaGlobal()"
+                            class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
+                        >
+                            🗑️ Eliminar Toda la Clasificación
+                        </button>
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -2237,28 +2276,41 @@ export class UIManager {
      * @returns {string} HTML de la clasificación
      */
     mostrarClasificacion(fase) {
-        if (fase === 'segunda') {
-            return `
-                <div class="bg-white rounded-lg shadow-md p-6 text-center">
-                    <h3 class="text-2xl font-bold text-blue-600 mb-4">🔵 2ª Fase</h3>
-                    <p class="text-gray-600 text-lg mb-4">
-                        La clasificación de 2ª fase estará disponible cuando comience la competición en enero de 2026.
-                    </p>
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
-                        <p class="text-gray-700">
-                            ⏱️ Sigue nuestras redes sociales para estar al tanto del inicio de la segunda fase.
-                        </p>
-                    </div>
-                </div>
-            `;
-        }
+        // Verificar si es admin
+        const esAdmin = this.app && this.app.adminManager && this.app.adminManager.usuario;
 
-        // Primera fase o todas
-        const clasificacion = CLASIFICACION_PRIMERA_FASE;
+        // Debug: verificar estado de admin
+        console.log('🔍 mostrarClasificacion - esAdmin:', esAdmin);
+        console.log('🔍 this.app:', this.app);
+        console.log('🔍 this.app.adminManager:', this.app?.adminManager);
+        console.log('🔍 this.app.adminManager.usuario:', this.app?.adminManager?.usuario);
+
+        // Guardar fase actual para las funciones globales
+        window.faseClasificacionActual = fase;
+
+        // Cargar clasificación desde Firebase
+        this.cargarClasificacionFirebase(fase);
+
+        // Usar datos de constants.js como fallback mientras carga Firebase
+        const clasificacion = fase === 'segunda' ? CLASIFICACION_SEGUNDA_FASE : CLASIFICACION_PRIMERA_FASE;
 
         return `
             <div class="bg-white rounded-lg shadow-md overflow-x-auto">
-                <table class="w-full text-sm md:text-base">
+                ${esAdmin ? `
+                    <div class="p-4 bg-orange-50 border-b border-orange-200 flex justify-between items-center">
+                        <p class="text-sm text-gray-600">
+                            <span class="font-semibold text-orange-600">Modo Admin:</span> Puedes editar la clasificación directamente desde esta tabla
+                        </p>
+                        <button
+                            onclick="window.mostrarFormAñadirEquipoInline('${fase}')"
+                            class="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-700 transition-colors"
+                        >
+                            ➕ Añadir Equipo
+                        </button>
+                    </div>
+                ` : ''}
+
+                <table class="w-full text-sm md:text-base" id="tabla-clasificacion-${fase}">
                     <thead>
                         <tr class="bg-orange-500 text-white">
                             <th class="px-2 md:px-4 py-3 text-left font-bold">#</th>
@@ -2271,10 +2323,11 @@ export class UIManager {
                             <th class="px-2 md:px-4 py-3 text-center font-bold">PC</th>
                             <th class="px-2 md:px-4 py-3 text-center font-bold hidden sm:table-cell">Dif.</th>
                             <th class="px-2 md:px-4 py-3 text-center font-bold">PTS</th>
+                            ${esAdmin ? '<th class="px-2 md:px-4 py-3 text-center font-bold">Acciones</th>' : ''}
                         </tr>
                     </thead>
-                    <tbody>
-                        ${clasificacion.map(equipo => {
+                    <tbody id="tbody-clasificacion-${fase}">
+                        ${clasificacion.map((equipo, index) => {
                             const diferencia = equipo.pf - equipo.pc;
                             const esNuestroEquipo = equipo.equipo.toUpperCase().includes('MANISES') ||
                                                     equipo.equipo.toUpperCase().includes('CBC');
@@ -2283,22 +2336,33 @@ export class UIManager {
                                                    diferencia < 0 ? 'text-red-600 font-bold' :
                                                    'text-gray-600';
 
+                            // Usar ID temporal para datos de constants.js (sin id real)
+                            const equipoId = equipo.id || `temp-${index}`;
+
                             return `
-                                <tr class="${fondoFila} border-b hover:bg-gray-50 transition-colors">
-                                    <td class="px-2 md:px-4 py-3 font-bold text-orange-600">${equipo.pos}</td>
-                                    <td class="px-2 md:px-4 py-3 font-semibold ${esNuestroEquipo ? 'text-orange-700' : 'text-gray-800'}">
+                                <tr id="fila-${equipoId}" class="${fondoFila} border-b hover:bg-gray-50 transition-colors" data-posicion="${equipo.pos || equipo.posicion}">
+                                    <td class="px-2 md:px-4 py-3 font-bold text-orange-600">${equipo.pos || equipo.posicion}</td>
+                                    <td id="equipo-${equipoId}" class="px-2 md:px-4 py-3 font-semibold ${esNuestroEquipo ? 'text-orange-700' : 'text-gray-800'}">
                                         ${esNuestroEquipo ? '🏀 ' : ''}${equipo.equipo}
                                     </td>
-                                    <td class="px-2 md:px-4 py-3 text-center">${equipo.j}</td>
-                                    <td class="px-2 md:px-4 py-3 text-center text-green-600 font-semibold">${equipo.v}</td>
-                                    <td class="px-2 md:px-4 py-3 text-center text-red-600 font-semibold">${equipo.p}</td>
-                                    <td class="px-2 md:px-4 py-3 text-center">${equipo.np}</td>
-                                    <td class="px-2 md:px-4 py-3 text-center font-semibold">${equipo.pf}</td>
-                                    <td class="px-2 md:px-4 py-3 text-center font-semibold">${equipo.pc}</td>
+                                    <td id="j-${equipoId}" class="px-2 md:px-4 py-3 text-center">${equipo.j}</td>
+                                    <td id="v-${equipoId}" class="px-2 md:px-4 py-3 text-center text-green-600 font-semibold">${equipo.v}</td>
+                                    <td id="p-${equipoId}" class="px-2 md:px-4 py-3 text-center text-red-600 font-semibold">${equipo.p}</td>
+                                    <td id="np-${equipoId}" class="px-2 md:px-4 py-3 text-center">${equipo.np || 0}</td>
+                                    <td id="pf-${equipoId}" class="px-2 md:px-4 py-3 text-center font-semibold">${equipo.pf}</td>
+                                    <td id="pc-${equipoId}" class="px-2 md:px-4 py-3 text-center font-semibold">${equipo.pc}</td>
                                     <td class="px-2 md:px-4 py-3 text-center font-bold hidden sm:table-cell ${colorDiferencia}">
                                         ${diferencia > 0 ? '+' : ''}${diferencia}
                                     </td>
-                                    <td class="px-2 md:px-4 py-3 text-center font-bold bg-orange-200 text-orange-800">${equipo.pts}</td>
+                                    <td id="pts-${equipoId}" class="px-2 md:px-4 py-3 text-center font-bold bg-orange-200 text-orange-800">${equipo.pts}</td>
+                                    ${esAdmin ? `
+                                        <td id="acciones-${equipoId}" class="px-2 md:px-4 py-3 text-center space-x-1">
+                                            <button onclick="window.editarEquipoInline('${equipoId}')" class="text-blue-600 hover:text-blue-800 text-lg" title="Editar">✏️</button>
+                                            ${index > 0 ? `<button onclick="window.subirPosicionEquipo('${equipoId}')" class="text-green-600 hover:text-green-800 text-lg" title="Subir posición">⬆️</button>` : ''}
+                                            ${index < clasificacion.length - 1 ? `<button onclick="window.bajarPosicionEquipo('${equipoId}')" class="text-yellow-600 hover:text-yellow-800 text-lg" title="Bajar posición">⬇️</button>` : ''}
+                                            <button onclick="if(confirm('¿Eliminar ${equipo.equipo.replace(/'/g, "\\'")} de la clasificación?')) window.eliminarEquipoClasificacionInline('${equipoId}')" class="text-red-600 hover:text-red-800 text-lg" title="Eliminar">🗑️</button>
+                                        </td>
+                                    ` : ''}
                                 </tr>
                             `;
                         }).join('')}
@@ -2321,6 +2385,197 @@ export class UIManager {
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Carga la clasificación desde Firebase y actualiza la tabla dinámicamente
+     * @param {string} fase - Fase a cargar
+     */
+    async cargarClasificacionFirebase(fase) {
+        if (!this.app || !this.app.clasificacionManager) return;
+
+        try {
+            const clasificaciones = await this.app.clasificacionManager.obtenerClasificacionesUnaVez(fase);
+
+            // Verificar si es admin
+            const esAdmin = this.app.adminManager && this.app.adminManager.usuario;
+
+            // Debug
+            console.log('🔍 cargarClasificacionFirebase - esAdmin:', esAdmin);
+            console.log('🔍 clasificaciones desde Firebase:', clasificaciones.length, 'equipos');
+
+            if (clasificaciones && clasificaciones.length > 0) {
+                // Actualizar tbody
+                const tbody = document.getElementById(`tbody-clasificacion-${fase}`);
+                if (!tbody) return;
+
+                // Si es admin, asegurarse de que la cabecera tenga la columna "Acciones" y el banner
+                if (esAdmin) {
+                    // Añadir banner de admin si no existe
+                    const tabla = document.getElementById(`tabla-clasificacion-${fase}`);
+                    if (tabla) {
+                        const contenedor = tabla.parentElement;
+                        const tieneBannerAdmin = contenedor.querySelector('.bg-orange-50');
+                        if (!tieneBannerAdmin) {
+                            const banner = document.createElement('div');
+                            banner.className = 'p-4 bg-orange-50 border-b border-orange-200 flex justify-between items-center';
+                            banner.innerHTML = `
+                                <p class="text-sm text-gray-600">
+                                    <span class="font-semibold text-orange-600">Modo Admin:</span> Puedes editar la clasificación directamente desde esta tabla
+                                </p>
+                                <button
+                                    onclick="window.mostrarFormAñadirEquipoInline('${fase}')"
+                                    class="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-700 transition-colors"
+                                >
+                                    ➕ Añadir Equipo
+                                </button>
+                            `;
+                            contenedor.insertBefore(banner, tabla);
+                            console.log('✅ Banner de admin añadido');
+                        }
+
+                        // Añadir columna "Acciones" en thead si no existe
+                        const thead = tabla.querySelector('thead tr');
+                        const tieneColumnaAcciones = thead.querySelector('th:last-child')?.textContent.includes('Acciones');
+                        if (!tieneColumnaAcciones) {
+                            const thAcciones = document.createElement('th');
+                            thAcciones.className = 'px-2 md:px-4 py-3 text-center font-bold';
+                            thAcciones.textContent = 'Acciones';
+                            thead.appendChild(thAcciones);
+                            console.log('✅ Columna "Acciones" añadida al thead (Firebase path)');
+                        }
+                    }
+                }
+
+                tbody.innerHTML = clasificaciones.map((equipo, index) => {
+                    const diferencia = equipo.pf - equipo.pc;
+                    const esNuestroEquipo = equipo.equipo.toUpperCase().includes('MANISES') ||
+                                            equipo.equipo.toUpperCase().includes('CBC');
+                    const fondoFila = esNuestroEquipo ? 'bg-orange-100' : 'bg-white';
+                    const colorDiferencia = diferencia > 0 ? 'text-green-600 font-bold' :
+                                           diferencia < 0 ? 'text-red-600 font-bold' :
+                                           'text-gray-600';
+
+                    return `
+                        <tr id="fila-${equipo.id}" class="${fondoFila} border-b hover:bg-gray-50 transition-colors" data-posicion="${equipo.posicion}">
+                            <td class="px-2 md:px-4 py-3 font-bold text-orange-600">${equipo.posicion}</td>
+                            <td id="equipo-${equipo.id}" class="px-2 md:px-4 py-3 font-semibold ${esNuestroEquipo ? 'text-orange-700' : 'text-gray-800'}">
+                                ${esNuestroEquipo ? '🏀 ' : ''}${equipo.equipo}
+                            </td>
+                            <td id="j-${equipo.id}" class="px-2 md:px-4 py-3 text-center">${equipo.j}</td>
+                            <td id="v-${equipo.id}" class="px-2 md:px-4 py-3 text-center text-green-600 font-semibold">${equipo.v}</td>
+                            <td id="p-${equipo.id}" class="px-2 md:px-4 py-3 text-center text-red-600 font-semibold">${equipo.p}</td>
+                            <td id="np-${equipo.id}" class="px-2 md:px-4 py-3 text-center">${equipo.np || 0}</td>
+                            <td id="pf-${equipo.id}" class="px-2 md:px-4 py-3 text-center font-semibold">${equipo.pf}</td>
+                            <td id="pc-${equipo.id}" class="px-2 md:px-4 py-3 text-center font-semibold">${equipo.pc}</td>
+                            <td class="px-2 md:px-4 py-3 text-center font-bold hidden sm:table-cell ${colorDiferencia}">
+                                ${diferencia > 0 ? '+' : ''}${diferencia}
+                            </td>
+                            <td id="pts-${equipo.id}" class="px-2 md:px-4 py-3 text-center font-bold bg-orange-200 text-orange-800">${equipo.pts}</td>
+                            ${esAdmin ? `
+                                <td id="acciones-${equipo.id}" class="px-2 md:px-4 py-3 text-center space-x-1">
+                                    <button onclick="window.editarEquipoInline('${equipo.id}')" class="text-blue-600 hover:text-blue-800 text-lg" title="Editar">✏️</button>
+                                    ${index > 0 ? `<button onclick="window.subirPosicionEquipo('${equipo.id}')" class="text-green-600 hover:text-green-800 text-lg" title="Subir posición">⬆️</button>` : ''}
+                                    ${index < clasificaciones.length - 1 ? `<button onclick="window.bajarPosicionEquipo('${equipo.id}')" class="text-yellow-600 hover:text-yellow-800 text-lg" title="Bajar posición">⬇️</button>` : ''}
+                                    <button onclick="if(confirm('¿Eliminar ${equipo.equipo.replace(/'/g, "\\'")} de la clasificación?')) window.eliminarEquipoClasificacionInline('${equipo.id}')" class="text-red-600 hover:text-red-800 text-lg" title="Eliminar">🗑️</button>
+                                </td>
+                            ` : ''}
+                        </tr>
+                    `;
+                }).join('');
+
+                console.log(`✅ Clasificación de ${fase} fase actualizada desde Firebase (${clasificaciones.length} equipos)`);
+            } else {
+                // No hay datos en Firebase
+                console.log('⚠️ No hay datos en Firebase para la clasificación de', fase, 'fase');
+
+                if (esAdmin) {
+                    // Si es admin y no hay datos, mostrar pantalla de migración/añadir
+                    const contenedor = document.querySelector(`#tabla-clasificacion-${fase}`)?.parentElement;
+                    if (!contenedor) return;
+
+                    // Reemplazar todo el contenedor con la pantalla de estado vacío
+                    contenedor.innerHTML = `
+                        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                            <div class="mb-6">
+                                <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                            </div>
+
+                            <h3 class="text-2xl font-bold text-gray-800 mb-4">📊 Clasificación Vacía</h3>
+
+                            <p class="text-gray-600 mb-8">
+                                No hay equipos en la base de datos para ${fase === 'primera' ? 'la primera fase' : 'la segunda fase'}.
+                            </p>
+
+                            ${fase === 'primera' ? `
+                                <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
+                                    <h4 class="font-bold text-blue-800 mb-3">💡 ¿Primera vez configurando?</h4>
+                                    <p class="text-sm text-blue-700 mb-4">
+                                        Los datos finales de la 1ª fase están listos para migrar desde el código.
+                                        <br>
+                                        Incluye los 6 equipos del Grupo D con sus estadísticas finales.
+                                    </p>
+                                    <button
+                                        onclick="window.migrarClasificacionAFirebase()"
+                                        class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
+                                    >
+                                        📤 Migrar Datos de 1ª Fase a Firebase
+                                    </button>
+                                    <p class="text-xs text-gray-600 mt-3">
+                                        Esto copiará los 6 equipos finales de la 1ª fase a la base de datos
+                                    </p>
+                                </div>
+
+                                <div class="text-gray-500 text-sm">
+                                    <p>O también puedes:</p>
+                                </div>
+                            ` : ''}
+
+                            <div class="mt-6">
+                                <button
+                                    onclick="window.mostrarFormAñadirEquipoInline('${fase}')"
+                                    class="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors shadow-md hover:shadow-lg"
+                                >
+                                    ➕ Añadir Equipos Manualmente
+                                </button>
+                            </div>
+
+                            ${fase === 'segunda' ? `
+                                <p class="text-sm text-gray-500 mt-4">
+                                    Añade los equipos de la segunda fase uno por uno
+                                </p>
+                            ` : `
+                                <p class="text-sm text-gray-500 mt-4">
+                                    Añade equipos personalizados si la migración no es apropiada
+                                </p>
+                            `}
+                        </div>
+                    `;
+
+                    console.log(`✅ Pantalla de estado vacío mostrada para ${fase} fase`);
+                } else {
+                    // Si no es admin, mostrar mensaje de "sin datos" para usuarios públicos
+                    const contenedor = document.querySelector(`#tabla-clasificacion-${fase}`)?.parentElement;
+                    if (!contenedor) return;
+
+                    contenedor.innerHTML = `
+                        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">📊 Clasificación No Disponible</h3>
+                            <p class="text-gray-600">
+                                La clasificación de ${fase === 'primera' ? 'la primera fase' : 'la segunda fase'} aún no ha sido publicada.
+                            </p>
+                            <p class="text-sm text-gray-500 mt-4">
+                                Vuelve pronto para ver los resultados
+                            </p>
+                        </div>
+                    `;
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error cargando clasificación desde Firebase:', error);
+        }
     }
 }
 

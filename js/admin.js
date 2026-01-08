@@ -19,7 +19,17 @@ export class AdminManager {
         this.auth = getAuth(app);
         this.isAdmin = false;
         this.showAdminPanel = false;
+        this.usuario = null; // Usuario autenticado actual
         this.onAuthChange = onAuthChange;
+    }
+
+    /**
+     * Establece la referencia a la instancia de la app principal
+     * @param {Object} appInstance - Instancia de CBCManisesApp
+     */
+    setAppInstance(appInstance) {
+        this.appInstance = appInstance;
+        console.log('🔗 AdminManager vinculado a la app principal');
     }
 
     /**
@@ -29,9 +39,12 @@ export class AdminManager {
         onAuthStateChanged(this.auth, (user) => {
             if (user) {
                 this.isAdmin = true;
+                this.usuario = user; // Guardar usuario autenticado
                 console.log('👤 Usuario autenticado:', user.email);
+                console.log('🔄 Re-renderizando UI con estado admin actualizado');
             } else {
                 this.isAdmin = false;
+                this.usuario = null;
                 this.showAdminPanel = false;
                 console.log('👤 Usuario no autenticado');
             }
@@ -39,6 +52,15 @@ export class AdminManager {
             // Notificar cambio de autenticación
             if (this.onAuthChange) {
                 this.onAuthChange(this.isAdmin);
+            }
+
+            // CRUCIAL: Re-renderizar UI después de cambio de autenticación
+            // Esto asegura que los botones de admin aparezcan cuando el usuario se loguea
+            if (this.appInstance && this.appInstance.uiManager) {
+                setTimeout(() => {
+                    console.log('🎨 Ejecutando re-render post-autenticación');
+                    this.appInstance.renderizar();
+                }, 100); // Pequeño delay para asegurar que todo se haya actualizado
             }
         });
     }
