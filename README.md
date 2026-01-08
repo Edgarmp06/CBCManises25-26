@@ -2,7 +2,7 @@
 
 > Plataforma integral de seguimiento, estadísticas y administración para el equipo Cadete Masculino - Temporada 2025/26
 
-**Última actualización:** 8 de enero de 2026
+**Última actualización:** 9 de enero de 2026
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://cbc-manises.vercel.app)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase-orange?logo=firebase)](https://firebase.google.com)
@@ -31,9 +31,13 @@
 
 #### 📅 Calendario Inteligente
 - Visualización completa de todos los partidos de la temporada
+- **Ordenación por fecha cronológica** (no por jornada)
+  - Si J2 es antes que J1, aparece primero
+  - Ideal para gestionar aplazamientos y partidos fuera de orden
+  - Próximos partidos: ordenados del más cercano al más lejano
+  - Partidos pasados: ordenados del más reciente al más antiguo
 - **Sistema de fases dual** (1ª y 2ª fase) con filtrado sincronizado
 - Badges visuales de fase: 🟡 Primera Fase / 🔵 Segunda Fase
-- Próximos partidos destacados con cuenta regresiva
 - Indicadores de partido en directo (🔴 LIVE)
 
 #### 🔴 Marcadores en Directo
@@ -729,6 +733,7 @@ Inicio: **10 de enero de 2026**
 - **31 Dic 2025**: 🔄 Sistema de fases completo + ubicaciones personalizadas
 - **5 Ene 2026**: 🏅 Sistema de clasificación editable inline con Firebase
 - **8 Ene 2026**: 🔧 Función de auto-ordenamiento de clasificación por puntos
+- **9 Ene 2026**: 📅 Ordenación inteligente del calendario por fecha cronológica
 
 ---
 
