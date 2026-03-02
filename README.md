@@ -166,6 +166,13 @@ Dos opciones para reordenar la clasificación:
 - 💬 **Canal de WhatsApp oficial** con botón directo
 - 📱 **Compartir resultados** en redes sociales
 - 📊 **Analytics integrado** (Vercel Analytics)
+- 🧪 **Vercel Speed Insights** para monitoreo de rendimiento
+
+### 🛠️ Sistema de Autocuración (Contra-F5)
+- **Detector de Fallos Críticos**: Refresco automático si la app no carga en 8s.
+- **Gestión de Caché Inteligente**: Detección inmediata de nuevas versiones (v3).
+- **Botón de Emergencia**: Opción "Reset App" para usuarios con problemas de carga.
+- **Sincronización de Versiones**: Forzado de recarga cuando el Service Worker se actualiza.
 
 ---
 
@@ -693,8 +700,10 @@ Inicio: **10 de enero de 2026**
 - 🗂️ Gestionar actas (editar/eliminar)
 - 📍 Usar ubicaciones personalizadas con opción Local/Visitante
 - 🏅 **Gestionar clasificación inline** (añadir, editar, reordenar, eliminar equipos)
-- 🔧 **Auto-ordenar clasificación** por puntos con función de consola
+- 🔧 **Auto-ordenar clasificación** por puntos desde el panel admin
 - 📤 **Migrar datos** de constants.js a Firebase con un solo click
+- ⚙️ **Gestionar Sistema**: Forzar limpieza de caché global (Reset App)
+- 🧪 **Monitorear Rendimiento**: Acceso a Vercel Insights desde el código
 
 ---
 
@@ -712,6 +721,8 @@ Inicio: **10 de enero de 2026**
 - **5 Ene 2026**: 🏅 Sistema de clasificación editable inline con Firebase
 - **8 Ene 2026**: 🔧 Función de auto-ordenamiento de clasificación por puntos
 - **9 Ene 2026**: 📅 Ordenación inteligente del calendario por fecha cronológica
+- **2 Mar 2026**: 🛠️ Sistema de autocuración de caché y detector de fallos persistentes
+- **2 Mar 2026**: ⚙️ Sección de "Gestión de Sistema" en Panel Admin y botón de Reset en Footer
 
 ---
 

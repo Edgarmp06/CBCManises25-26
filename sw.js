@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cbc-manises-v2';
+const CACHE_NAME = 'cbc-manises-v3';
 const ASSETS = [
     './',
     './index.html',
