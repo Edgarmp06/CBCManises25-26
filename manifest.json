@@ -1,0 +1,22 @@
+{
+  "name": "CBC Manises-Quart 25/26",
+  "short_name": "CBC Manises",
+  "description": "Web oficial del equipo cadete masculino CBC Manises-Quart",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF6B35",
+  "icons": [
+    {
+      "src": "logos/cbc-manises.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "logos/cbc-manises.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ],
+  "orientation": "portrait"
+}

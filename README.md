@@ -2,7 +2,7 @@
 
 > Plataforma integral de seguimiento, estadísticas y administración para el equipo Cadete Masculino - Temporada 2025/26
 
-**Última actualización:** 9 de enero de 2026
+**Última actualización:** 2 de marzo de 2026
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://cbc-manises.vercel.app)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase-orange?logo=firebase)](https://firebase.google.com)
@@ -109,20 +109,15 @@ Las actas calculan automáticamente:
 Dos opciones para reordenar la clasificación:
 
 **Opción A - Manual (Botones ⬆️⬇️)**:
-- Admins pueden subir/bajar equipos uno a uno
-- Cambios inmediatos en Firebase
-- Control total sobre el orden
+- Admins pueden subir/bajar equipos directamente en la tabla.
+- El sistema detecta automáticamente al equipo adyacente para intercambiar la posición.
+- Control visual total e inmediato.
 
-**Opción B - Automático (Consola)**:
-```javascript
-// Ordenar por puntos automáticamente
-await window.corregirPosicionesClasificacion('primera')
-await window.corregirPosicionesClasificacion('segunda')
-```
-- Ordena por puntos (PTS) descendente
-- Desempata por diferencia de gol (PF - PC)
-- Actualiza todas las posiciones en Firebase
-- Recarga la tabla automáticamente
+**Opción B - Automático (Panel Admin)**:
+- Botón **"📊 Recalcular Posiciones"** en el panel de gestión.
+- Ordena por puntos (PTS) descendente según victorias, derrotas y no presentados.
+- Desempata por diferencia de tantos (PF - PC).
+- Actualiza todas las posiciones en Firebase en un solo clic.
 
 #### 📋 Tabla Completa por Fases
 - **1ª Fase**: Clasificación con todas las columnas (J, V, P, NP, PF, PC, Dif., PTS)
@@ -206,43 +201,26 @@ await window.corregirPosicionesClasificacion('segunda')
 
 ```
 CBCManises25-26-main/
-├── index.html                 # Página principal
+├── index.html                 # Página principal y estructura PWA
 ├── css/
-│   └── styles.css             # Estilos personalizados
+│   └── styles.css             # Design System (naranja/vibrante)
 ├── js/
-│   ├── app.js                 # 🎯 Orquestador principal
-│   ├── config.js              # ⚙️ Configuración Firebase + equipos + ubicaciones
-│   ├── constants.js           # 📊 Constantes (JUGADORES_EQUIPO, CLASIFICACION)
-│   ├── partidos.js            # 🏀 Gestor de partidos (CRUD + listeners)
-│   ├── actas.js               # 📝 Gestor de actas (CRUD + listeners)
-│   ├── clasificacion.js       # 🏅 Gestor de clasificación (CRUD + auto-ordenamiento)
-│   ├── estadisticas.js        # 📈 Procesamiento y gráficas
-│   ├── admin.js               # 🔐 Panel admin + autenticación
-│   ├── anotaciones.js         # 🎯 Sistema de anotaciones en vivo
-│   ├── ui.js                  # 🎨 Gestión de interfaz (2000+ líneas)
-│   ├── utils.js               # 🛠️ Funciones auxiliares
-│   └── eventBus.js            # 📡 Sistema de eventos
-├── imagenes/                  # 🖼️ Galería de fotos (6 imágenes rotativas)
-├── logos/                     # 🏆 Logos equipos (1ª y 2ª fase)
-│   ├── README.md              # Documentación de logos
-│   ├── cbc-manises.jpg        # Logo oficial CBC
-│   ├── picanya.jpg            # Primera fase
-│   ├── torrent.jpg
-│   ├── mislata.jpg
-│   ├── moncada.jpg
-│   ├── picken.jpg
-│   ├── tabernes.jpg           # Segunda fase
-│   ├── abastos.jpg
-│   ├── escolapias.jpg
-│   ├── riba-roja.jpg
-│   ├── petraher.jpg
-│   └── el-pilar.jpg
-├── .gitignore                 # Archivos ignorados
-├── robots.txt                 # SEO - Configuración crawlers
-├── sitemap.xml                # SEO - Mapa del sitio
-├── CLEAN_ARCHITECTURE.md      # 📐 Documentación arquitectura
-├── loaderio-*.txt             # Token verificación de carga
-└── README.md                  # Este archivo
+│   ├── app.js                 # 🎯 Orquestador y funciones globales
+│   ├── config.js              # ⚙️ Configuración Firebase
+│   ├── constants.js           # 📊 Datos estáticos (Jugadores/Equipos)
+│   ├── partidos.js            # 🏀 Entidad Partidos
+│   ├── actas.js               # 📝 Entidad Actas
+│   ├── clasificacion.js       # 🏅 Entidad Clasificación
+│   ├── estadisticas.js        # 📈 Motor de gráficas (Chart.js)
+│   ├── ui.js                  # 🎨 Renderizado y UX Premium
+│   └── ...                    # Otros módulos (admin, utils, eventBus)
+├── imagenes/                  # 🖼️ Fondos de la aplicación
+├── logos/                     # 🏆 Escudos de los rivales
+├── README.md                  # Este archivo
+├── CLEAN_ARCHITECTURE.md      # Detalles técnicos de arquitectura
+├── vercel.json                # Configuración de hosting e Headers
+├── sw.js                      # Service Worker (Modo Offline)
+└── manifest.json              # Configuración PWA
 ```
 
 ---
