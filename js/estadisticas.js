@@ -24,7 +24,6 @@ export class EstadisticasManager {
      */
     setFiltroFase(fase) {
         this.filtroFase = fase;
-        console.log(`🔄 Filtro de fase: ${fase}`);
     }
 
     /**
@@ -58,7 +57,6 @@ export class EstadisticasManager {
 
         actas.forEach(acta => {
             if (!acta.jugadores || !Array.isArray(acta.jugadores)) {
-                console.warn('⚠️ Acta sin jugadores:', acta);
                 return;
             }
 
@@ -104,8 +102,6 @@ export class EstadisticasManager {
                 this.datosJugadores[jugador.nombre].totalFC += jugador.fc;
             });
         });
-
-        console.log(`📊 Selector de jugadores: ${actas.length} actas totales → ${Object.keys(this.datosJugadores).length} jugadores disponibles`);
     }
 
     /**
@@ -193,7 +189,6 @@ export class EstadisticasManager {
         const actasFiltradas = this.obtenerActasPorFase(actas, this.filtroFase);
 
         if (actasFiltradas.length === 0) {
-            console.warn('⚠️ No hay actas para generar gráficas');
             return;
         }
 
@@ -203,7 +198,6 @@ export class EstadisticasManager {
         );
 
         if (actasValidas.length === 0) {
-            console.warn('⚠️ No hay actas válidas con jugadores');
             return;
         }
 
@@ -245,8 +239,6 @@ export class EstadisticasManager {
 
         // Gráfica 4: Porcentaje de tiros libres
         this._crearGraficaPorcentajeTLEquipo(jornadas, porcentajesTL);
-
-        console.log('📊 Gráficas del equipo creadas');
     }
 
     /**
@@ -447,7 +439,6 @@ export class EstadisticasManager {
 
         const datos = this.datosJugadores[nombre];
         if (!datos || datos.partidos.length === 0) {
-            console.warn('⚠️ No hay datos del jugador:', nombre);
             return;
         }
 
@@ -469,8 +460,6 @@ export class EstadisticasManager {
         this._crearGraficaJugadorT2(jornadas, puntosT2);
         this._crearGraficaJugadorT3(jornadas, puntosT3);
         this._crearGraficaJugadorFaltas(jornadas, faltas);
-
-        console.log(`📊 Gráficas de ${nombre} creadas`);
     }
 
     /**

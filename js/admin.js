@@ -8,6 +8,7 @@
  */
 
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { mostrarNotificacion } from './utils.js';
 
 export class AdminManager {
     /**
@@ -140,9 +141,9 @@ export class AdminManager {
 
         try {
             await this.login(email, password);
-            alert('✅ Acceso concedido');
+            mostrarNotificacion('Acceso concedido', 'success');
         } catch (error) {
-            alert(`❌ ${error.message}`);
+            mostrarNotificacion(error.message, 'error');
         }
     }
 
@@ -202,7 +203,7 @@ export class AdminManager {
             callback();
         } else {
             console.warn('⚠️', mensajeError);
-            alert(mensajeError);
+            mostrarNotificacion(mensajeError, 'warning');
         }
     }
 }

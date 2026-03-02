@@ -140,20 +140,58 @@ export function debounce(func, wait = 300) {
 }
 
 /**
- * Muestra una notificación toast
+ * Muestra una notificación toast moderna
  * @param {string} mensaje - Mensaje a mostrar
  * @param {string} tipo - 'success', 'error', 'warning', 'info'
+ * @param {string} titulo - Título opcional
  */
-export function mostrarNotificacion(mensaje, tipo = 'info') {
-    // Por ahora usa alert, pero se puede mejorar con una librería de toasts
-    const iconos = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
+export function mostrarNotificacion(mensaje, tipo = 'info', titulo = '') {
+    // Asegurar que exista el contenedor
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    // Configuración según tipo
+    const config = {
+        success: { icono: '✅', tituloDefecto: 'Éxito' },
+        error: { icono: '❌', tituloDefecto: 'Error' },
+        warning: { icono: '⚠️', tituloDefecto: 'Atención' },
+        info: { icono: 'ℹ️', tituloDefecto: 'Información' }
     };
 
-    alert(`${iconos[tipo] || 'ℹ️'} ${mensaje}`);
+    const icon = config[tipo]?.icono || 'ℹ️';
+    const title = titulo || config[tipo]?.tituloDefecto || 'Aviso';
+
+    // Crear el toast
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${tipo}`;
+    toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${mensaje}</div>
+        </div>
+    `;
+
+    // Añadir al contenedor
+    container.appendChild(toast);
+
+    // Auto-eliminar después de 4 segundos
+    setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => {
+            if (toast.parentNode === container) {
+                container.removeChild(toast);
+            }
+            // Eliminar contenedor si está vacío
+            if (container.children.length === 0) {
+                document.body.removeChild(container);
+            }
+        }, 300); // Tiempo de la animación de salida
+    }, 4000);
 }
 
 /**
@@ -335,4 +373,30 @@ export function formatearNumero(numero) {
 export function truncar(texto, maxLength = 100) {
     if (!texto || texto.length <= maxLength) return texto;
     return texto.substring(0, maxLength) + '...';
+}
+
+/**
+ * Comparte un resultado utilizando la Web Share API
+ * @param {Object} shareData - { title, text, url }
+ */
+export async function compartirResultado(shareData) {
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+            return true;
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error al compartir:', error);
+            }
+            return false;
+        }
+    } else {
+        // Fallback: Copiar al portapapeles
+        const textToCopy = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
+        const exito = await copiarAlPortapapeles(textToCopy);
+        if (exito) {
+            mostrarNotificacion('Resultado copiado al portapapeles', 'success');
+        }
+        return exito;
+    }
 }

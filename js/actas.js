@@ -27,7 +27,6 @@ export class ActasManager {
      */
     iniciarListener() {
         if (this.unsubscribe) {
-            console.warn('⚠️ Listener de actas ya iniciado');
             return;
         }
 
@@ -39,14 +38,10 @@ export class ActasManager {
                 ...doc.data()
             }));
 
-            console.log(`📋 ${this.actas.length} actas cargadas`);
-
             // Notificar cambios
             if (this.onUpdate) {
                 this.onUpdate(this.actas);
             }
-        }, (error) => {
-            console.error('❌ Error en listener de actas:', error);
         });
     }
 
@@ -57,7 +52,6 @@ export class ActasManager {
         if (this.unsubscribe) {
             this.unsubscribe();
             this.unsubscribe = null;
-            console.log('🛑 Listener de actas detenido');
         }
     }
 
@@ -233,24 +227,15 @@ export class ActasManager {
      * @returns {Promise<string>} ID del acta creada
      */
     async crearActa(data, partido) {
-        console.log('=== INICIANDO CREACIÓN DE ACTA ===');
-        console.log('Partido ID:', data.partidoId);
-        console.log('Número de jugadores:', data.jugadores?.length || 0);
-
         // Validar acta
         const validation = this.validarActa(data, partido);
 
         if (!validation.valid) {
-            const errorMsg = validation.errors.join('\n');
-            console.error('❌ Errores de validación:', errorMsg);
-            throw new Error(errorMsg);
+            throw new Error(validation.errors.join('\n'));
         }
 
         // Procesar jugadores
         const jugadoresProcesados = data.jugadores.map(j => this.procesarJugador(j));
-
-        console.log('✅ Validación completada');
-        console.log('Jugadores procesados:', jugadoresProcesados);
 
         // Preparar datos del acta
         const actaData = {
@@ -267,15 +252,10 @@ export class ActasManager {
             jugadores: jugadoresProcesados
         };
 
-        console.log('Datos del acta a guardar:', actaData);
-
         try {
-            console.log('Guardando en Firebase...');
             const docRef = await addDoc(collection(this.db, 'actas'), actaData);
-            console.log('✅ Acta guardada exitosamente:', docRef.id);
             return docRef.id;
         } catch (error) {
-            console.error('❌ Error al guardar acta:', error);
             throw error;
         }
     }
@@ -300,9 +280,7 @@ export class ActasManager {
 
         try {
             await updateDoc(doc(this.db, 'actas', id), actaData);
-            console.log('✅ Acta actualizada:', id);
         } catch (error) {
-            console.error('❌ Error al actualizar acta:', error);
             throw error;
         }
     }
@@ -314,9 +292,7 @@ export class ActasManager {
     async eliminarActa(id) {
         try {
             await deleteDoc(doc(this.db, 'actas', id));
-            console.log('✅ Acta eliminada:', id);
         } catch (error) {
-            console.error('❌ Error al eliminar acta:', error);
             throw error;
         }
     }

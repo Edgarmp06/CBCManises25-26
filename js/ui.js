@@ -5,7 +5,7 @@
  * Separa completamente la presentación de la lógica de negocio.
  */
 
-import { formatearFecha, formatearFechaCorta } from './utils.js';
+import { formatearFecha, formatearFechaCorta, mostrarNotificacion, compartirResultado } from './utils.js';
 import { INFO_EQUIPO, URLS, JUGADORES_EQUIPO, CLASIFICACION_PRIMERA_FASE, CLASIFICACION_SEGUNDA_FASE } from './constants.js';
 import { UBICACIONES, EQUIPOS_RIVALES } from './config.js';
 
@@ -25,11 +25,6 @@ export class UIManager {
      */
     inicializar(app) {
         this.app = app;
-        console.log('🎨 UIManager inicializado');
-        console.log('📊 EQUIPOS_RIVALES cargados:', EQUIPOS_RIVALES);
-        console.log('📍 Total de equipos:', EQUIPOS_RIVALES.length, '(5 de 1ª fase + 6 de 2ª fase = 11)');
-        console.log('🏟️ UBICACIONES cargadas:', UBICACIONES);
-        console.log('📍 Total de ubicaciones:', UBICACIONES.length);
     }
 
     /**
@@ -37,10 +32,7 @@ export class UIManager {
      */
     renderizar() {
         const appContainer = document.getElementById('app');
-        if (!appContainer) {
-            console.error('❌ No se encontró el contenedor #app');
-            return;
-        }
+        if (!appContainer) return;
 
         const estado = this.app.getEstado();
 
@@ -92,7 +84,7 @@ export class UIManager {
 
                     // Validación
                     if (!ubicacionSeleccionada) {
-                        alert('⚠️ Por favor, escribe una ubicación personalizada');
+                        mostrarNotificacion('Por favor, escribe una ubicación personalizada', 'warning');
                         return;
                     }
 
@@ -105,7 +97,7 @@ export class UIManager {
 
                     // Validación
                     if (!ubicacionSeleccionada) {
-                        alert('⚠️ Por favor, selecciona una ubicación');
+                        mostrarNotificacion('Por favor, selecciona una ubicación', 'warning');
                         return;
                     }
 
@@ -128,8 +120,6 @@ export class UIManager {
                     cuartoActual: ''
                 };
 
-                console.log('📝 Datos del formulario:', data);
-
                 try {
                     await window.añadirPartidoGlobal(data);
                     e.target.reset();
@@ -137,8 +127,7 @@ export class UIManager {
                     if (ubicacionCustomCheckbox) ubicacionCustomCheckbox.checked = false;
                     window.toggleUbicacionCustom();
                 } catch (error) {
-                    console.error('❌ Error al añadir partido:', error);
-                    alert('❌ Error: ' + error.message);
+                    mostrarNotificacion(`Error: ${error.message}`, 'error');
                 }
             });
         }
@@ -190,7 +179,6 @@ export class UIManager {
                         }));
 
                         this.actualizarListaJugadores();
-                        console.log(`✅ ${this.jugadoresActaTemporal.length} jugadores cargados automáticamente`);
                     }
                 } else {
                     formularioActaContainer.style.display = 'none';
@@ -219,13 +207,12 @@ export class UIManager {
 
                 // Validar campos básicos
                 if (!jugador.dorsal || !jugador.nombre) {
-                    alert('⚠️ Dorsal y nombre son obligatorios');
+                    mostrarNotificacion('Dorsal y nombre son obligatorios', 'warning');
                     return;
                 }
 
                 // Añadir a la lista
                 this.jugadoresActaTemporal.push(jugador);
-                console.log('➕ Jugador añadido:', jugador);
 
                 // Actualizar vista
                 this.actualizarListaJugadores();
@@ -253,12 +240,12 @@ export class UIManager {
         if (btnGuardarActa) {
             btnGuardarActa.addEventListener('click', async () => {
                 if (!this.partidoSeleccionadoActa) {
-                    alert('⚠️ Selecciona un partido');
+                    mostrarNotificacion('Selecciona un partido', 'warning');
                     return;
                 }
 
                 if (this.jugadoresActaTemporal.length === 0) {
-                    alert('⚠️ Añade al menos un jugador al acta');
+                    mostrarNotificacion('Añade al menos un jugador al acta', 'warning');
                     return;
                 }
 
@@ -280,10 +267,8 @@ export class UIManager {
                     selectorPartido.value = '';
                     formularioActaContainer.style.display = 'none';
 
-                    alert('✅ Acta guardada correctamente');
                 } catch (error) {
-                    console.error('❌ Error al guardar acta:', error);
-                    alert('❌ Error: ' + error.message);
+                    mostrarNotificacion(`Error: ${error.message}`, 'error');
                 }
             });
         }
@@ -304,8 +289,6 @@ export class UIManager {
                 formularioActaContainer.style.display = 'none';
             });
         }
-
-        console.log('✅ Event listeners del panel admin configurados');
     }
 
     /**
@@ -487,7 +470,7 @@ export class UIManager {
 
                     // Validación
                     if (!ubicacionSeleccionada) {
-                        alert('⚠️ Por favor, escribe una ubicación personalizada');
+                        mostrarNotificacion('Por favor, escribe una ubicación personalizada', 'warning');
                         return;
                     }
 
@@ -500,7 +483,7 @@ export class UIManager {
 
                     // Validación
                     if (!ubicacionSeleccionada) {
-                        alert('⚠️ Por favor, selecciona una ubicación');
+                        mostrarNotificacion('Por favor, selecciona una ubicación', 'warning');
                         return;
                     }
 
@@ -525,20 +508,15 @@ export class UIManager {
                     resultadoLocal: resultadoLocalValue,
                     resultadoVisitante: resultadoVisitanteValue,
                     cuartoActual: document.getElementById('editar-cuarto').value,
-                    sinActa: document.getElementById('editar-sin-acta')?.checked || false
+                    sinActa: document.getElementById('editar-sin-acta')?.checked || false,
+                    actaCerrada: document.getElementById('editar-acta-cerrada')?.checked || false
                 };
 
-                console.log('📝 Partido ID:', partidoId);
-                console.log('📝 Datos de edición:', data);
-
                 try {
-                    console.log('⏳ Guardando partido...');
                     await window.actualizarPartidoGlobal(partidoId, data);
-                    console.log('✅ Partido guardado correctamente');
                     modal.style.display = 'none';
                 } catch (error) {
-                    console.error('❌ Error al editar partido:', error);
-                    alert('❌ Error: ' + error.message);
+                    mostrarNotificacion(`Error: ${error.message}`, 'error');
                 }
             });
         }
@@ -569,6 +547,9 @@ export class UIManager {
         document.getElementById('editar-cuarto').value = partido.cuartoActual || '';
         if (document.getElementById('editar-sin-acta')) {
             document.getElementById('editar-sin-acta').checked = partido.sinActa || false;
+        }
+        if (document.getElementById('editar-acta-cerrada')) {
+            document.getElementById('editar-acta-cerrada').checked = partido.actaCerrada || false;
         }
 
         // Verificar si la ubicación es personalizada (no está en UBICACIONES)
@@ -657,9 +638,9 @@ export class UIManager {
 
                 <div class="flex-1 max-w-4xl mx-auto p-4 w-full">
                     ${showAdminPanel
-                        ? this.generarPanelAdmin(estado)
-                        : this.generarContenidoPrincipal(estado)
-                    }
+                ? this.generarPanelAdmin(estado)
+                : this.generarContenidoPrincipal(estado)
+            }
                 </div>
 
                 ${this.generarFooter()}
@@ -701,8 +682,8 @@ export class UIManager {
                             <select id="editar-ubicacion" style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
                                 <option value="">Seleccionar pabellón...</option>
                                 ${UBICACIONES.map(ubicacion =>
-                                    `<option value="${ubicacion.nombre}">${ubicacion.esLocal ? '🏠' : '🚗'} ${ubicacion.nombre}${ubicacion.esLocal ? ' - LOCAL' : ''}</option>`
-                                ).join('')}
+            `<option value="${ubicacion.nombre}">${ubicacion.esLocal ? '🏠' : '🚗'} ${ubicacion.nombre}${ubicacion.esLocal ? ' - LOCAL' : ''}</option>`
+        ).join('')}
                             </select>
                             <div style="margin-top: 0.5rem;">
                                 <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 600; color: #4b5563; cursor: pointer;">
@@ -752,8 +733,8 @@ export class UIManager {
                                 <select id="editar-rival" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
                                     <option value="">Seleccionar equipo...</option>
                                     ${EQUIPOS_RIVALES.map(equipo =>
-                                        `<option value="${equipo.nombre}">${equipo.nombre}</option>`
-                                    ).join('')}
+            `<option value="${equipo.nombre}">${equipo.nombre}</option>`
+        ).join('')}
                                 </select>
                             </div>
                             <div>
@@ -784,6 +765,10 @@ export class UIManager {
                                 <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                     <input type="checkbox" id="editar-sin-acta" style="cursor: pointer;">
                                     <span style="font-size: 0.875rem;">⚠️ Sin acta (incidencia)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="editar-acta-cerrada" style="cursor: pointer;">
+                                    <span style="font-size: 0.875rem;">🚫 Acta cerrada (>40 pts)</span>
                                 </label>
                             </div>
                         </div>
@@ -974,51 +959,49 @@ export class UIManager {
             <div class="bg-white rounded-lg shadow-md mb-6 p-2 flex gap-2">
                 <button
                     onclick="window.cambiarTab('calendario')"
-                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${
-                        activeTab === 'calendario'
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${activeTab === 'calendario'
+                ? 'bg-orange-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
                 >
                     📅<span class="hidden xs:inline sm:hidden"> </span><span class="hidden sm:inline"> Calendario</span><span class="sm:hidden xs:inline">Cal</span>
                 </button>
                 <button
                     onclick="window.cambiarTab('resultados')"
-                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${
-                        activeTab === 'resultados'
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${activeTab === 'resultados'
+                ? 'bg-orange-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
                 >
                     🏆<span class="hidden xs:inline sm:hidden"> </span><span class="hidden sm:inline"> Resultados</span><span class="sm:hidden xs:inline">Res</span>
                 </button>
                 <button
                     onclick="window.cambiarTab('estadisticas')"
-                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${
-                        activeTab === 'estadisticas'
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${activeTab === 'estadisticas'
+                ? 'bg-orange-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
                 >
                     📊<span class="hidden xs:inline sm:hidden"> </span><span class="hidden sm:inline"> Estadísticas</span><span class="sm:hidden xs:inline">Est</span>
                 </button>
                 <button
                     onclick="window.cambiarTab('clasificacion')"
-                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${
-                        activeTab === 'clasificacion'
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors ${activeTab === 'clasificacion'
+                ? 'bg-orange-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
                 >
                     🏅<span class="hidden xs:inline sm:hidden"> </span><span class="hidden sm:inline"> Clasificación</span><span class="sm:hidden xs:inline">Clas</span>
                 </button>
             </div>
 
             <!-- Contenido de la tab activa -->
-            ${activeTab === 'calendario' ? this.generarTabCalendario(partidosCalendario, actas, estado.isAdmin) : ''}
-            ${activeTab === 'resultados' ? this.generarTabResultados(partidosFinalizados, actas, estado.isAdmin) : ''}
-            ${activeTab === 'estadisticas' ? this.generarTabEstadisticas(actas, datosJugadores, jugadorSeleccionado) : ''}
-            ${activeTab === 'clasificacion' ? this.generarTabClasificacion() : ''}
+            <div id="tab-content" class="animate-fade-in">
+                ${activeTab === 'calendario' ? this.generarTabCalendario(partidosCalendario, actas, estado.isAdmin) : ''}
+                ${activeTab === 'resultados' ? this.generarTabResultados(partidosFinalizados, actas, estado.isAdmin) : ''}
+                ${activeTab === 'estadisticas' ? this.generarTabEstadisticas(actas, datosJugadores, jugadorSeleccionado) : ''}
+                ${activeTab === 'clasificacion' ? this.generarTabClasificacion() : ''}
+            </div>
         `;
     }
 
@@ -1096,8 +1079,8 @@ export class UIManager {
                         </h3>
                         <p class="text-gray-500 mb-4">
                             ${filtroActual === 'todas'
-                                ? 'Los resultados aparecerán aquí una vez finalizados los partidos'
-                                : `No hay partidos de ${filtroActual === 'primera' ? '1ª Fase' : '2ª Fase'} todavía.`}
+                    ? 'Los resultados aparecerán aquí una vez finalizados los partidos'
+                    : `No hay partidos de ${filtroActual === 'primera' ? '1ª Fase' : '2ª Fase'} todavía.`}
                         </p>
                         ${filtroActual !== 'todas' ? `
                             <button
@@ -1215,28 +1198,81 @@ export class UIManager {
                 </div>
 
                 <!-- Gráficas del jugador (si hay uno seleccionado) -->
-                ${jugadorSeleccionado ? `
-                    <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
-                        <h4 class="text-lg md:text-xl font-bold text-gray-800 mb-4">
-                            👤 Estadísticas de ${jugadorSeleccionado}
-                        </h4>
+                ${jugadorSeleccionado ? (() => {
+                const datos = datosJugadores[jugadorSeleccionado];
+                if (!datos) return '';
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            <div class="h-64 md:h-72">
-                                <canvas id="chartJugadorTL"></canvas>
+                const maxPts = Math.max(...datos.partidos.map(p => p.pts), 0);
+                const avgPts = (datos.totalPts / datos.partidos.length).toFixed(1);
+                const porcTL = datos.totalTL_int > 0 ? Math.round((datos.totalTL_an / datos.totalTL_int) * 100) : 0;
+                const maxT3 = Math.max(...datos.partidos.map(p => p.t3_an), 0);
+
+                return `
+                        <div class="bg-white rounded-lg shadow-md p-4 md:p-6 space-y-6">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                                <h4 class="text-xl md:text-2xl font-bold text-gray-800">
+                                    👤 ${jugadorSeleccionado} <span class="text-orange-600">#${datos.dorsal}</span>
+                                </h4>
+                                <div class="flex gap-4">
+                                    <div class="text-center">
+                                        <p class="text-xs text-gray-500 uppercase font-bold">PJ</p>
+                                        <p class="text-lg font-bold text-gray-800">${datos.partidos.length}</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-xs text-gray-500 uppercase font-bold">PTS/P</p>
+                                        <p class="text-lg font-bold text-gray-800">${avgPts}</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-xs text-gray-500 uppercase font-bold">%TL</p>
+                                        <p class="text-lg font-bold text-orange-600">${porcTL}%</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="h-64 md:h-72">
-                                <canvas id="chartJugadorT2"></canvas>
+
+                            <!-- Récords Personales -->
+                            <div>
+                                <h5 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">🏆 Récords Personales</h5>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                                        <p class="text-xs text-orange-600 font-bold">Máx. Puntos</p>
+                                        <p class="text-2xl font-black text-orange-700">${maxPts}</p>
+                                    </div>
+                                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                        <p class="text-xs text-blue-600 font-bold">Más Triples</p>
+                                        <p class="text-2xl font-black text-blue-700">${maxT3}</p>
+                                    </div>
+                                    <div class="bg-green-50 p-3 rounded-lg border border-green-100">
+                                        <p class="text-xs text-green-600 font-bold">Total Puntos</p>
+                                        <p class="text-2xl font-black text-green-700">${datos.totalPts}</p>
+                                    </div>
+                                    <div class="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                                        <p class="text-xs text-purple-600 font-bold">Faltas Totales</p>
+                                        <p class="text-2xl font-black text-purple-700">${datos.totalFC}</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="h-64 md:h-72">
-                                <canvas id="chartJugadorT3"></canvas>
-                            </div>
-                            <div class="h-64 md:h-72">
-                                <canvas id="chartJugadorFaltas"></canvas>
+
+                            <!-- Gráficas Individuales -->
+                            <div class="pt-4">
+                                <h5 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">📈 Evolución por Jornada</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                    <div class="h-64 md:h-72">
+                                        <canvas id="chartJugadorTL"></canvas>
+                                    </div>
+                                    <div class="h-64 md:h-72">
+                                        <canvas id="chartJugadorT2"></canvas>
+                                    </div>
+                                    <div class="h-64 md:h-72">
+                                        <canvas id="chartJugadorT3"></canvas>
+                                    </div>
+                                    <div class="h-64 md:h-72">
+                                        <canvas id="chartJugadorFaltas"></canvas>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ` : ''}
+                    `;
+            })() : ''}
             </div>
         `;
     }
@@ -1256,7 +1292,7 @@ export class UIManager {
         const tieneActa = actas.some(a => a.partidoId === partido.id);
 
         return `
-            <div class="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4">
+            <div class="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4 animate-fade-in hover-premium">
                 ${partido.jornada ? `
                     <div class="text-center mb-4">
                         <span class="bg-orange-500 text-white px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold">
@@ -1382,27 +1418,39 @@ export class UIManager {
                     </div>
                 </div>
 
-                ${partido.finalizado && tieneActa ? `
-                    <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                    ${partido.finalizado && partido.actaCerrada ? `
+                        <div class="bg-blue-100 border-l-4 border-blue-500 p-4 rounded-lg">
+                            <div class="flex items-start gap-3">
+                                <span class="text-xl">🚫</span>
+                                <div>
+                                    <p class="font-bold text-blue-800 text-sm">Acta cerrada (>40 pts diferencia)</p>
+                                    <p class="text-xs text-blue-700 mt-1">
+                                        El acta se cerró por diferencia de puntos. Las estadísticas están disponibles pero pueden no estar completas, ya que no se pudo controlar el directo de los puntos tras el cierre del marcador.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${partido.finalizado && tieneActa ? `
                         <button onclick="window.verActaGlobal('${partido.id}')" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700">
                             📊 Ver Acta Oficial
                         </button>
-                    </div>
-                ` : partido.finalizado && partido.sinActa ? `
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <div class="bg-orange-100 border-l-4 border-orange-500 p-4 rounded-lg">
+                    ` : partido.finalizado && partido.sinActa ? `
+                        <div class="bg-orange-100 border-l-4 border-orange-500 p-4 rounded-lg text-left">
                             <div class="flex items-start gap-3">
                                 <span class="text-xl">⚠️</span>
                                 <div>
                                     <p class="font-bold text-orange-800 text-sm">Acta no disponible (incidencia técnica)</p>
                                     <p class="text-xs text-orange-700 mt-1">
-                                        El acta del encuentro no pudo emitirse por una incidencia técnica. Como consecuencia, no se publicarán las estadísticas de este partido en la jornada.
+                                        El acta del encuentro no pudo emitirse por una incidencia técnica. Como consecuencia, no se publicarán las estadísticas de este partido.
                                     </p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ` : ''}
+                    ` : ''}
+                </div>
 
                 ${isAdmin && !partido.finalizado ? `
                     <div class="mt-4 pt-4 border-t border-gray-200">
@@ -1450,12 +1498,20 @@ export class UIManager {
                     </div>
                 ` : ''}
 
-                ${isAdmin ? `
-                    <div class="mt-4 flex gap-2 justify-center">
-                        <button onclick="window.editarPartidoGlobal('${partido.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">✏️ Editar</button>
-                        <button onclick="window.eliminarPartidoGlobal('${partido.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">🗑️ Eliminar</button>
-                    </div>
-                ` : ''}
+                <div class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-2 justify-center">
+                    <button 
+                        onclick="window.compartirPartidoGlobal('${partido.id}')" 
+                        class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-700 flex items-center gap-2 transition-all active:scale-95"
+                    >
+                        <span>🔗</span>
+                        <span>Compartir</span>
+                    </button>
+
+                    ${isAdmin ? `
+                        <button onclick="window.editarPartidoGlobal('${partido.id}')" class="bg-blue-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-600">✏️ Editar</button>
+                        <button onclick="window.eliminarPartidoGlobal('${partido.id}')" class="bg-red-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-600">🗑️ Eliminar</button>
+                    ` : ''}
+                </div>
             </div>
         `;
     }
@@ -1721,8 +1777,8 @@ export class UIManager {
                             <select id="ubicacion" class="w-full border rounded px-3 py-2">
                                 <option value="">Seleccionar pabellón...</option>
                                 ${UBICACIONES.map(ubicacion =>
-                                    `<option value="${ubicacion.nombre}">${ubicacion.esLocal ? '🏠' : '🚗'} ${ubicacion.nombre}${ubicacion.esLocal ? ' - LOCAL' : ''}</option>`
-                                ).join('')}
+            `<option value="${ubicacion.nombre}">${ubicacion.esLocal ? '🏠' : '🚗'} ${ubicacion.nombre}${ubicacion.esLocal ? ' - LOCAL' : ''}</option>`
+        ).join('')}
                             </select>
                             <div class="mt-2">
                                 <label class="flex items-center gap-2 text-sm font-medium text-gray-600 cursor-pointer">
@@ -1770,8 +1826,8 @@ export class UIManager {
                             <select id="rival" required class="w-full border rounded px-3 py-2">
                                 <option value="">Seleccionar equipo...</option>
                                 ${EQUIPOS_RIVALES.map(equipo =>
-                                    `<option value="${equipo.nombre}">${equipo.nombre}</option>`
-                                ).join('')}
+            `<option value="${equipo.nombre}">${equipo.nombre}</option>`
+        ).join('')}
                             </select>
                         </div>
                         <div>
@@ -1953,8 +2009,8 @@ export class UIManager {
                                 </thead>
                                 <tbody>
                                     ${estado.actas.map(a => {
-                                        const partido = partidos.find(p => p.id === a.partidoId);
-                                        return `
+            const partido = partidos.find(p => p.id === a.partidoId);
+            return `
                                             <tr class="hover:bg-gray-50">
                                                 <td class="px-4 py-2 border">${a.jornada || '-'}</td>
                                                 <td class="px-4 py-2 border">${partido?.rival || 'Desconocido'}</td>
@@ -1967,7 +2023,7 @@ export class UIManager {
                                                 </td>
                                             </tr>
                                         `;
-                                    }).join('')}
+        }).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -1998,6 +2054,35 @@ export class UIManager {
                             <option value="primera">🟡 Primera Fase</option>
                             <option value="segunda">🔵 Segunda Fase</option>
                         </select>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="bg-green-50 border border-green-200 rounded p-4">
+                            <h5 class="font-semibold text-green-800 mb-2">🔄 Recalcular Clasificación</h5>
+                            <p class="text-sm text-green-700 mb-4">
+                                Reordena automáticamente a los equipos basándose en victorias, derrotas y diferencia de puntos.
+                            </p>
+                            <button
+                                onclick="window.corregirPosicionesClasificacion(document.getElementById('fase-clasificacion-eliminar').value)"
+                                class="w-full bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors"
+                            >
+                                📊 Recalcular Posiciones
+                            </button>
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded p-4">
+                            <h5 class="font-semibold text-blue-800 mb-2">📥 Migración Rápida</h5>
+                            <p class="text-sm text-blue-700 mb-4">
+                                Solo para 1ª Fase: Carga los datos finales del sistema anterior a Firebase.
+                            </p>
+                            <button
+                                onclick="window.migrarClasificacionAFirebase()"
+                                class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                            >
+                                📤 Migrar Datos 1ª Fase
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Botón para eliminar toda la clasificación -->
@@ -2230,28 +2315,32 @@ export class UIManager {
      * @returns {string} HTML de la tab clasificación
      */
     generarTabClasificacion() {
-        const filtroFase = this.app.estadisticasManager.getFiltroFase();
+        let filtroFase = this.app.estadisticasManager.getFiltroFase();
+
+        // La clasificación no debe mostrarse "todas" juntas (mezclaría fases)
+        // Si el filtro global es 'todas', para clasificación usamos 'primera' por defecto
+        if (filtroFase === 'todas') {
+            filtroFase = 'primera';
+        }
 
         return `
             <!-- Sub-pestañas de fases -->
             <div class="bg-white rounded-lg shadow-md mb-6 p-2 flex gap-2">
                 <button
                     onclick="window.cambiarFaseClasificacion('primera')"
-                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-sm md:text-base font-semibold transition-colors ${
-                        filtroFase === 'primera' || filtroFase === 'todas'
-                            ? 'bg-yellow-400 text-gray-800'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-sm md:text-base font-semibold transition-colors ${filtroFase === 'primera' || filtroFase === 'todas'
+                ? 'bg-yellow-400 text-gray-800'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
                 >
                     🟡 1ª Fase
                 </button>
                 <button
                     onclick="window.cambiarFaseClasificacion('segunda')"
-                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-sm md:text-base font-semibold transition-colors ${
-                        filtroFase === 'segunda'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-sm md:text-base font-semibold transition-colors ${filtroFase === 'segunda'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
                 >
                     🔵 2ª Fase
                 </button>
@@ -2267,7 +2356,10 @@ export class UIManager {
      * @param {string} fase - Fase a mostrar
      * @returns {string} HTML de la clasificación
      */
-    mostrarClasificacion(fase) {
+    mostrarClasificacion(faseOriginal) {
+        // Asegurar que no usamos 'todas' para la tabla de clasificación
+        const fase = faseOriginal === 'todas' ? 'primera' : faseOriginal;
+
         // Verificar si es admin
         const esAdmin = this.app && this.app.adminManager && this.app.adminManager.usuario;
 
@@ -2320,18 +2412,18 @@ export class UIManager {
                     </thead>
                     <tbody id="tbody-clasificacion-${fase}">
                         ${clasificacion.map((equipo, index) => {
-                            const diferencia = equipo.pf - equipo.pc;
-                            const esNuestroEquipo = equipo.equipo.toUpperCase().includes('MANISES') ||
-                                                    equipo.equipo.toUpperCase().includes('CBC');
-                            const fondoFila = esNuestroEquipo ? 'bg-orange-100' : 'bg-white';
-                            const colorDiferencia = diferencia > 0 ? 'text-green-600 font-bold' :
-                                                   diferencia < 0 ? 'text-red-600 font-bold' :
-                                                   'text-gray-600';
+            const diferencia = equipo.pf - equipo.pc;
+            const esNuestroEquipo = equipo.equipo.toUpperCase().includes('MANISES') ||
+                equipo.equipo.toUpperCase().includes('CBC');
+            const fondoFila = esNuestroEquipo ? 'bg-orange-100' : 'bg-white';
+            const colorDiferencia = diferencia > 0 ? 'text-green-600 font-bold' :
+                diferencia < 0 ? 'text-red-600 font-bold' :
+                    'text-gray-600';
 
-                            // Usar ID temporal para datos de constants.js (sin id real)
-                            const equipoId = equipo.id || `temp-${index}`;
+            // Usar ID temporal para datos de constants.js (sin id real)
+            const equipoId = equipo.id || `temp-${index}`;
 
-                            return `
+            return `
                                 <tr id="fila-${equipoId}" class="${fondoFila} border-b hover:bg-gray-50 transition-colors" data-posicion="${equipo.pos || equipo.posicion}">
                                     <td class="px-2 md:px-4 py-3 font-bold text-orange-600">${equipo.pos || equipo.posicion}</td>
                                     <td id="equipo-${equipoId}" class="px-2 md:px-4 py-3 font-semibold ${esNuestroEquipo ? 'text-orange-700' : 'text-gray-800'}">
@@ -2357,7 +2449,7 @@ export class UIManager {
                                     ` : ''}
                                 </tr>
                             `;
-                        }).join('')}
+        }).join('')}
                     </tbody>
                 </table>
             </div>
@@ -2442,11 +2534,11 @@ export class UIManager {
                 tbody.innerHTML = clasificaciones.map((equipo, index) => {
                     const diferencia = equipo.pf - equipo.pc;
                     const esNuestroEquipo = equipo.equipo.toUpperCase().includes('MANISES') ||
-                                            equipo.equipo.toUpperCase().includes('CBC');
+                        equipo.equipo.toUpperCase().includes('CBC');
                     const fondoFila = esNuestroEquipo ? 'bg-orange-100' : 'bg-white';
                     const colorDiferencia = diferencia > 0 ? 'text-green-600 font-bold' :
-                                           diferencia < 0 ? 'text-red-600 font-bold' :
-                                           'text-gray-600';
+                        diferencia < 0 ? 'text-red-600 font-bold' :
+                            'text-gray-600';
 
                     return `
                         <tr id="fila-${equipo.id}" class="${fondoFila} border-b hover:bg-gray-50 transition-colors" data-posicion="${equipo.posicion}">

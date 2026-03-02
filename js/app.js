@@ -15,6 +15,8 @@ import { EstadisticasManager } from './estadisticas.js';
 import { AdminManager } from './admin.js';
 import { AnotacionesManager } from './anotaciones.js';
 import ClasificacionManager from './clasificacion.js';
+import { INFO_EQUIPO } from './constants.js';
+import { mostrarNotificacion, compartirResultado } from './utils.js';
 import uiManager from './ui.js';
 
 /**
@@ -68,15 +70,14 @@ class CBCManisesApp {
             localStorage.setItem('filtroFase', 'todas');
         }
 
-        console.log('🏀 CBC Manises - Aplicación inicializada');
+        // Iniciar rotación de fotos de fondo
+        this.iniciarRotacionFotos();
     }
 
     /**
      * Inicia la aplicación
      */
     async iniciar() {
-        console.log('🚀 Iniciando aplicación...');
-
         // Iniciar listeners
         this.partidosManager.iniciarListener();
         this.actasManager.iniciarListener();
@@ -84,8 +85,6 @@ class CBCManisesApp {
 
         // Iniciar rotación de fotos de fondo
         this.iniciarRotacionFotos();
-
-        console.log('✅ Aplicación iniciada correctamente');
     }
 
     /**
@@ -93,7 +92,6 @@ class CBCManisesApp {
      * @param {Array} partidos - Lista actualizada de partidos
      */
     onPartidosUpdate(partidos) {
-        console.log(`🔄 Partidos actualizados: ${partidos.length}`);
         this.renderizar();
     }
 
@@ -102,7 +100,6 @@ class CBCManisesApp {
      * @param {Array} actas - Lista actualizada de actas
      */
     onActasUpdate(actas) {
-        console.log(`🔄 Actas actualizadas: ${actas.length}`);
         // Procesar datos de jugadores para estadísticas
         this.estadisticasManager.procesarDatosJugadores(actas);
         this.renderizar();
@@ -113,7 +110,6 @@ class CBCManisesApp {
      * @param {boolean} isAdmin - Si el usuario es admin
      */
     onAuthChange(isAdmin) {
-        console.log(`🔄 Estado de autenticación: ${isAdmin ? 'Admin' : 'Usuario'}`);
         this.renderizar();
     }
 
@@ -123,7 +119,6 @@ class CBCManisesApp {
      */
     cambiarTab(tab) {
         this.activeTab = tab;
-        console.log(`📑 Pestaña activa: ${tab}`);
 
         // Si es la pestaña de estadísticas, crear gráficas
         if (tab === 'estadisticas') {
@@ -147,7 +142,6 @@ class CBCManisesApp {
      * @param {string} fase - Fase ('primera', 'segunda')
      */
     cambiarFaseClasificacion(fase) {
-        console.log(`🏅 Fase clasificación: ${fase}`);
         this.estadisticasManager.setFiltroFase(fase);
         localStorage.setItem('filtroFase', fase);
         this.renderizar();
@@ -185,7 +179,7 @@ class CBCManisesApp {
     verActa(partidoId) {
         const acta = this.actasManager.getActas().find(a => a.partidoId === partidoId);
         if (!acta) {
-            alert('No hay acta para este partido');
+            mostrarNotificacion('No hay acta para este partido', 'info');
             return;
         }
         this.viendoActa = acta;
@@ -256,6 +250,36 @@ window.uiManager = uiManager;
 window.cambiarTab = (tab) => app.cambiarTab(tab);
 window.cambiarFaseClasificacion = (fase) => app.cambiarFaseClasificacion(fase);
 window.cambiarJugadorGlobal = (nombre) => app.cambiarJugador(nombre);
+window.compartirPartidoGlobal = async (id) => {
+    const partido = app.partidosManager.getPartidoById(id);
+    if (!partido) return;
+
+    const equipoPrincipal = INFO_EQUIPO.NOMBRE;
+    const rival = partido.rival;
+    const equipoLocal = partido.esLocal ? equipoPrincipal : rival;
+    const equipoVisitante = partido.esLocal ? rival : equipoPrincipal;
+
+    let texto = `🏀 *${INFO_EQUIPO.NOMBRE} - ${INFO_EQUIPO.CATEGORIA}*\n`;
+    texto += `🏆 J${partido.jornada || '?'}${partido.fase ? ` - ${partido.fase === 'primera' ? '1ª Fase' : '2ª Fase'}` : ''}\n\n`;
+
+    if (partido.finalizado) {
+        texto += `✅ *Resultado:* ${equipoLocal} ${partido.resultadoLocal} - ${partido.resultadoVisitante} ${equipoVisitante}\n`;
+    } else if (partido.enDirecto) {
+        texto += `🔴 *EN DIRECTO:* ${equipoLocal} ${partido.resultadoLocal} - ${partido.resultadoVisitante} ${equipoVisitante}\n`;
+    } else {
+        texto += `⏳ *Próximo partido:* ${equipoLocal} vs ${equipoVisitante}\n`;
+    }
+
+    texto += `📅 ${partido.fecha || 'Sin fecha'}\n`;
+    if (partido.hora) texto += `🕒 ${partido.hora}\n`;
+    if (partido.ubicacion) texto += `📍 ${partido.ubicacion}\n`;
+
+    await compartirResultado({
+        title: `${INFO_EQUIPO.NOMBRE} 25/26`,
+        text: texto,
+        url: window.location.href
+    });
+};
 
 // === FUNCIONES DE ADMIN ===
 window.handleAdminLoginGlobal = () => app.adminManager.loginConPrompt();
@@ -269,52 +293,42 @@ window.toggleAdminPanel = () => {
 window.añadirPartidoGlobal = async (data) => {
     try {
         await window.app.partidosManager.añadirPartido(data);
-        alert('✅ Partido añadido correctamente');
+        mostrarNotificacion('Partido añadido correctamente', 'success');
     } catch (error) {
-        alert(`❌ Error: ${error.message}`);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
 window.actualizarPartidoGlobal = async (id, data) => {
     try {
         await window.app.partidosManager.actualizarPartido(id, data);
-        alert('✅ Partido actualizado correctamente');
+        mostrarNotificacion('Partido actualizado correctamente', 'success');
     } catch (error) {
-        alert(`❌ Error: ${error.message}`);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
 // === FUNCIÓN PARA UBICACIÓN PERSONALIZADA ===
-window.toggleUbicacionCustom = function() {
+window.toggleUbicacionCustom = function () {
     const checkbox = document.getElementById('ubicacion-custom-checkbox');
     const container = document.getElementById('ubicacion-custom-container');
     const select = document.getElementById('ubicacion');
 
-    console.log('🔧 toggleUbicacionCustom called');
-    console.log('  - Checkbox:', checkbox);
-    console.log('  - Checked:', checkbox?.checked);
-    console.log('  - Container:', container);
-
     if (checkbox && checkbox.checked) {
         if (container) {
             container.classList.remove('hidden');
-            console.log('  ✅ Container mostrado (hidden removed)');
-            console.log('  - Container classes:', container.className);
         }
         if (select) {
             select.disabled = true;
             select.classList.add('opacity-50');
-            console.log('  ✅ Select deshabilitado');
         }
     } else {
         if (container) {
             container.classList.add('hidden');
-            console.log('  ❌ Container oculto (hidden added)');
         }
         if (select) {
             select.disabled = false;
             select.classList.remove('opacity-50');
-            console.log('  ✅ Select habilitado');
         }
         const customInput = document.getElementById('ubicacion-custom');
         if (customInput) customInput.value = '';
@@ -322,36 +336,26 @@ window.toggleUbicacionCustom = function() {
 };
 
 // Función similar para el modal de editar
-window.toggleUbicacionCustomEditar = function() {
+window.toggleUbicacionCustomEditar = function () {
     const checkbox = document.getElementById('editar-ubicacion-custom-checkbox');
     const container = document.getElementById('editar-ubicacion-custom-container');
     const select = document.getElementById('editar-ubicacion');
 
-    console.log('🔧 toggleUbicacionCustomEditar called');
-    console.log('  - Checkbox:', checkbox);
-    console.log('  - Checked:', checkbox?.checked);
-    console.log('  - Container:', container);
-
     if (checkbox && checkbox.checked) {
-        // El modal usa inline styles, no clases
         if (container) {
             container.style.display = 'block';
-            console.log('  ✅ Container mostrado (display: block)');
         }
         if (select) {
             select.disabled = true;
             select.classList.add('opacity-50');
-            console.log('  ✅ Select deshabilitado');
         }
     } else {
         if (container) {
             container.style.display = 'none';
-            console.log('  ❌ Container oculto (display: none)');
         }
         if (select) {
             select.disabled = false;
             select.classList.remove('opacity-50');
-            console.log('  ✅ Select habilitado');
         }
         const customInput = document.getElementById('editar-ubicacion-custom');
         if (customInput) customInput.value = '';
@@ -362,9 +366,9 @@ window.eliminarPartidoGlobal = async (id) => {
     if (confirm('¿Estás seguro de eliminar este partido?')) {
         try {
             await app.partidosManager.eliminarPartido(id);
-            alert('✅ Partido eliminado');
+            mostrarNotificacion('Partido eliminado', 'success');
         } catch (error) {
-            alert(`❌ Error: ${error.message}`);
+            mostrarNotificacion(`Error: ${error.message}`, 'error');
         }
     }
 };
@@ -383,7 +387,7 @@ window.editarEquipoInline = async (id) => {
         const equipo = clasificaciones.find(e => e.id === id);
 
         if (!equipo) {
-            alert('❌ Equipo no encontrado');
+            mostrarNotificacion('Equipo no encontrado', 'error');
             return;
         }
 
@@ -421,11 +425,8 @@ window.editarEquipoInline = async (id) => {
             <button onclick="window.guardarEdicionInline('${id}')" class="text-green-600 hover:text-green-800 text-xl" title="Guardar">✅</button>
             <button onclick="window.cancelarEdicionInline('${id}')" class="text-red-600 hover:text-red-800 text-xl" title="Cancelar">❌</button>
         `;
-
-        console.log('✏️ Modo edición activado para:', equipo.equipo);
     } catch (error) {
-        console.error('❌ Error al editar equipo:', error);
-        alert('❌ Error: ' + error.message);
+        mostrarNotificacion('Error al editar equipo', 'error');
     }
 };
 
@@ -434,29 +435,32 @@ window.editarEquipoInline = async (id) => {
  */
 window.guardarEdicionInline = async (id) => {
     try {
+        const v = parseInt(document.getElementById(`input-v-${id}`).value) || 0;
+        const p = parseInt(document.getElementById(`input-p-${id}`).value) || 0;
+        const np = parseInt(document.getElementById(`input-np-${id}`).value) || 0;
+
+        // Cálculo automático de puntos: Victoria = 2, Derrota = 1, NP = 0
+        const puntosCalculados = (v * 2) + (p * 1) + (np * 0);
+
         const data = {
-            equipo: document.getElementById(`input-equipo-${id}`).value,
+            equipo: document.getElementById(`input-equipo-${id}`).value.trim(),
             posicion: parseInt(document.querySelector(`#fila-${id}`).dataset.posicion),
-            j: parseInt(document.getElementById(`input-j-${id}`).value),
-            v: parseInt(document.getElementById(`input-v-${id}`).value),
-            p: parseInt(document.getElementById(`input-p-${id}`).value),
-            np: parseInt(document.getElementById(`input-np-${id}`).value) || 0,
-            pf: parseInt(document.getElementById(`input-pf-${id}`).value),
-            pc: parseInt(document.getElementById(`input-pc-${id}`).value),
-            pts: parseInt(document.getElementById(`input-pts-${id}`).value)
+            j: v + p + np,
+            v: v,
+            p: p,
+            np: np,
+            pf: parseInt(document.getElementById(`input-pf-${id}`).value) || 0,
+            pc: parseInt(document.getElementById(`input-pc-${id}`).value) || 0,
+            pts: puntosCalculados
         };
 
-        console.log('💾 Guardando edición:', data);
         await window.app.clasificacionManager.actualizarEquipoClasificacion(id, data);
 
         // Recargar tabla
         const fase = window.faseClasificacionActual || 'primera';
         await window.uiManager.cargarClasificacionFirebase(fase);
-
-        console.log('✅ Equipo actualizado correctamente');
     } catch (error) {
-        console.error('❌ Error guardando edición:', error);
-        alert('❌ Error: ' + error.message);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -466,7 +470,6 @@ window.guardarEdicionInline = async (id) => {
 window.cancelarEdicionInline = async (id) => {
     const fase = window.faseClasificacionActual || 'primera';
     await window.uiManager.cargarClasificacionFirebase(fase);
-    console.log('❌ Edición cancelada');
 };
 
 /**
@@ -476,23 +479,24 @@ window.subirPosicionEquipo = async (id) => {
     try {
         const fase = window.faseClasificacionActual || 'primera';
         const clasificaciones = await window.app.clasificacionManager.obtenerClasificacionesUnaVez(fase);
-        const equipo = clasificaciones.find(e => e.id === id);
+        const equipoIndex = clasificaciones.findIndex(e => e.id === id);
+        if (equipoIndex === -1 || equipoIndex === 0) return;
 
-        if (!equipo || equipo.posicion === 1) return;
-
-        const equipoArriba = clasificaciones.find(e => e.posicion === equipo.posicion - 1);
+        const equipo = clasificaciones[equipoIndex];
+        const equipoArriba = clasificaciones[equipoIndex - 1];
 
         if (equipoArriba) {
-            console.log(`⬆️ Subiendo ${equipo.equipo} de posición ${equipo.posicion} a ${equipo.posicion - 1}`);
+            const posActual = equipo.posicion;
+            const posArriba = equipoArriba.posicion;
 
-            await window.app.clasificacionManager.actualizarEquipoClasificacion(id, { ...equipo, posicion: equipo.posicion - 1 });
-            await window.app.clasificacionManager.actualizarEquipoClasificacion(equipoArriba.id, { ...equipoArriba, posicion: equipoArriba.posicion + 1 });
+            // Intercambiar posiciones
+            await window.app.clasificacionManager.actualizarEquipoClasificacion(id, { ...equipo, posicion: posArriba });
+            await window.app.clasificacionManager.actualizarEquipoClasificacion(equipoArriba.id, { ...equipoArriba, posicion: posActual });
 
             await window.uiManager.cargarClasificacionFirebase(fase);
         }
     } catch (error) {
-        console.error('❌ Error al subir posición:', error);
-        alert('❌ Error: ' + error.message);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -503,41 +507,35 @@ window.bajarPosicionEquipo = async (id) => {
     try {
         const fase = window.faseClasificacionActual || 'primera';
         const clasificaciones = await window.app.clasificacionManager.obtenerClasificacionesUnaVez(fase);
-        const equipo = clasificaciones.find(e => e.id === id);
+        const equipoIndex = clasificaciones.findIndex(e => e.id === id);
+        if (equipoIndex === -1 || equipoIndex === clasificaciones.length - 1) return;
 
-        if (!equipo) return;
-
-        const equipoAbajo = clasificaciones.find(e => e.posicion === equipo.posicion + 1);
+        const equipo = clasificaciones[equipoIndex];
+        const equipoAbajo = clasificaciones[equipoIndex + 1];
 
         if (equipoAbajo) {
-            console.log(`⬇️ Bajando ${equipo.equipo} de posición ${equipo.posicion} a ${equipo.posicion + 1}`);
+            const posActual = equipo.posicion;
+            const posAbajo = equipoAbajo.posicion;
 
-            await window.app.clasificacionManager.actualizarEquipoClasificacion(id, { ...equipo, posicion: equipo.posicion + 1 });
-            await window.app.clasificacionManager.actualizarEquipoClasificacion(equipoAbajo.id, { ...equipoAbajo, posicion: equipoAbajo.posicion - 1 });
+            // Intercambiar posiciones
+            await window.app.clasificacionManager.actualizarEquipoClasificacion(id, { ...equipo, posicion: posAbajo });
+            await window.app.clasificacionManager.actualizarEquipoClasificacion(equipoAbajo.id, { ...equipoAbajo, posicion: posActual });
 
             await window.uiManager.cargarClasificacionFirebase(fase);
         }
     } catch (error) {
-        console.error('❌ Error al bajar posición:', error);
-        alert('❌ Error: ' + error.message);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
-/**
- * Eliminar equipo inline
- */
 window.eliminarEquipoClasificacionInline = async (id) => {
     try {
-        console.log('🗑️ Eliminando equipo:', id);
         await window.app.clasificacionManager.eliminarEquipoClasificacion(id);
 
         const fase = window.faseClasificacionActual || 'primera';
         await window.uiManager.cargarClasificacionFirebase(fase);
-
-        console.log('✅ Equipo eliminado');
     } catch (error) {
-        console.error('❌ Error eliminando equipo:', error);
-        alert('❌ Error: ' + error.message);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -550,9 +548,7 @@ window.mostrarFormAñadirEquipoInline = async (fase) => {
         const nuevaPosicion = clasificaciones.length + 1;
         let tbody = document.getElementById(`tbody-clasificacion-${fase}`);
 
-        // Si no existe tbody (porque se mostró la pantalla vacía), crear la tabla completa
         if (!tbody) {
-            console.log('🔄 Creando tabla de clasificación desde cero...');
             const contenedor = document.querySelector('.bg-white.rounded-lg.shadow-md');
             if (!contenedor) return;
 
@@ -587,18 +583,16 @@ window.mostrarFormAñadirEquipoInline = async (fase) => {
             tbody = document.getElementById(`tbody-clasificacion-${fase}`);
         }
 
-        // Añadir fila con inputs al final
+        // Añadir fila con inputs al final (J y PTS serán auto-calculados)
         const nuevaFila = document.createElement('tr');
         nuevaFila.id = 'fila-nuevo-equipo';
         nuevaFila.className = 'bg-green-50 border-2 border-green-400';
         nuevaFila.innerHTML = `
             <td class="px-2 md:px-4 py-3 font-bold text-orange-600">${nuevaPosicion}</td>
             <td class="px-2 md:px-4 py-3">
-                <input type="text" id="nuevo-equipo" placeholder="Nombre del equipo" class="border rounded px-2 py-1 w-full text-sm" required>
+                <input type="text" id="nuevo-equipo" placeholder="Nombre" class="border rounded px-2 py-1 w-full text-sm" required>
             </td>
-            <td class="px-2 md:px-4 py-3">
-                <input type="number" id="nuevo-j" value="0" class="border rounded px-2 py-1 w-16 text-center text-sm" min="0">
-            </td>
+            <td class="px-2 md:px-4 py-3 text-center">-</td>
             <td class="px-2 md:px-4 py-3">
                 <input type="number" id="nuevo-v" value="0" class="border rounded px-2 py-1 w-16 text-center text-sm" min="0">
             </td>
@@ -615,9 +609,7 @@ window.mostrarFormAñadirEquipoInline = async (fase) => {
                 <input type="number" id="nuevo-pc" value="0" class="border rounded px-2 py-1 w-16 text-center text-sm" min="0">
             </td>
             <td class="px-2 md:px-4 py-3 text-center hidden sm:table-cell">-</td>
-            <td class="px-2 md:px-4 py-3">
-                <input type="number" id="nuevo-pts" value="0" class="border rounded px-2 py-1 w-16 text-center text-sm font-bold" min="0">
-            </td>
+            <td class="px-2 md:px-4 py-3 text-center font-bold">-</td>
             <td class="px-2 md:px-4 py-3 text-center space-x-1">
                 <button onclick="window.guardarNuevoEquipoInline('${fase}', ${nuevaPosicion})" class="text-green-600 hover:text-green-800 text-xl" title="Guardar">✅</button>
                 <button onclick="window.cancelarNuevoEquipoInline()" class="text-red-600 hover:text-red-800 text-xl" title="Cancelar">❌</button>
@@ -627,7 +619,7 @@ window.mostrarFormAñadirEquipoInline = async (fase) => {
         tbody.appendChild(nuevaFila);
         document.getElementById('nuevo-equipo').focus();
     } catch (error) {
-        console.error('❌ Error mostrando formulario:', error);
+        // Error silencioso
     }
 };
 
@@ -637,26 +629,28 @@ window.mostrarFormAñadirEquipoInline = async (fase) => {
 window.guardarNuevoEquipoInline = async (fase, posicion) => {
     try {
         const equipo = document.getElementById('nuevo-equipo').value.trim();
-
         if (!equipo) {
-            alert('⚠️ El nombre del equipo es obligatorio');
+            mostrarNotificacion('El nombre del equipo es obligatorio', 'warning');
             return;
         }
+
+        const v = parseInt(document.getElementById('nuevo-v').value) || 0;
+        const p = parseInt(document.getElementById('nuevo-p').value) || 0;
+        const np = parseInt(document.getElementById('nuevo-np').value) || 0;
 
         const data = {
             equipo,
             fase,
             posicion,
-            j: parseInt(document.getElementById('nuevo-j').value) || 0,
-            v: parseInt(document.getElementById('nuevo-v').value) || 0,
-            p: parseInt(document.getElementById('nuevo-p').value) || 0,
-            np: parseInt(document.getElementById('nuevo-np').value) || 0,
+            j: v + p + np,
+            v: v,
+            p: p,
+            np: np,
             pf: parseInt(document.getElementById('nuevo-pf').value) || 0,
             pc: parseInt(document.getElementById('nuevo-pc').value) || 0,
-            pts: parseInt(document.getElementById('nuevo-pts').value) || 0
+            pts: (v * 2) + (p * 1) + (np * 0)
         };
 
-        console.log('➕ Añadiendo nuevo equipo:', data);
         await window.app.clasificacionManager.añadirEquipoClasificacion(data);
 
         // Eliminar fila del formulario
@@ -664,11 +658,8 @@ window.guardarNuevoEquipoInline = async (fase, posicion) => {
         if (fila) fila.remove();
 
         await window.uiManager.cargarClasificacionFirebase(fase);
-
-        console.log('✅ Nuevo equipo añadido');
     } catch (error) {
-        console.error('❌ Error añadiendo equipo:', error);
-        alert('❌ Error: ' + error.message);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -678,7 +669,6 @@ window.guardarNuevoEquipoInline = async (fase, posicion) => {
 window.cancelarNuevoEquipoInline = () => {
     const fila = document.getElementById('fila-nuevo-equipo');
     if (fila) fila.remove();
-    console.log('❌ Añadir equipo cancelado');
 };
 
 /**
@@ -691,8 +681,6 @@ window.migrarClasificacionAFirebase = async () => {
     }
 
     try {
-        console.log('📤 Iniciando migración de clasificación de 1ª fase...');
-
         // Datos finales de 1ª fase (Grupo D - Preferente Cadete Masculino)
         const primeraFase = [
             { equipo: 'PICKEN MA A', posicion: 1, j: 10, v: 10, p: 0, np: 0, pf: 715, pc: 352, pts: 20 },
@@ -710,18 +698,12 @@ window.migrarClasificacionAFirebase = async () => {
                 fase: 'primera'
             });
             migrados++;
-            console.log(`✅ Migrado ${migrados}/6: ${eq.equipo}`);
         }
 
-        console.log('🎉 Migración completada exitosamente');
-        alert(`✅ Migración completada!\n\n${migrados} equipos añadidos a Firebase.\n\nAhora puedes editarlos desde la tabla de clasificación.`);
-
-        // Re-renderizar para mostrar los nuevos datos
+        mostrarNotificacion('Migración completada correctamente', 'success');
         window.app.renderizar();
-
     } catch (error) {
-        console.error('❌ Error durante la migración:', error);
-        alert(`❌ Error durante la migración:\n\n${error.message}\n\nRevisa la consola para más detalles.`);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -740,12 +722,10 @@ window.eliminarClasificacionCompletaGlobal = async () => {
     if (!confirmacion2) return;
 
     try {
-        console.log(`🗑️ Eliminando toda la clasificación de ${fase} fase...`);
-
         const clasificaciones = await window.app.clasificacionManager.obtenerClasificacionesUnaVez(fase);
 
         if (clasificaciones.length === 0) {
-            alert(`ℹ️ No hay equipos en la clasificación de ${fase === 'primera' ? '1ª' : '2ª'} fase.`);
+            mostrarNotificacion(`No hay equipos en la clasificación de ${fase === 'primera' ? '1ª' : '2ª'} fase`, 'info');
             return;
         }
 
@@ -754,12 +734,9 @@ window.eliminarClasificacionCompletaGlobal = async () => {
             await window.app.clasificacionManager.eliminarEquipoClasificacion(equipo.id);
         }
 
-        alert(`✅ Se han eliminado ${clasificaciones.length} equipos de la clasificación de ${fase === 'primera' ? '1ª' : '2ª'} fase.`);
-
-        console.log(`✅ Clasificación de ${fase} fase eliminada completamente`);
+        mostrarNotificacion(`Se han eliminado ${clasificaciones.length} equipos de la clasificación de ${fase === 'primera' ? '1ª' : '2ª'} fase`, 'success');
     } catch (error) {
-        console.error('❌ Error eliminando clasificación completa:', error);
-        alert('❌ Error: ' + error.message);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -773,15 +750,11 @@ window.eliminarClasificacionCompletaGlobal = async () => {
  */
 window.corregirPosicionesClasificacion = async (fase = 'primera') => {
     try {
-        console.log(`🔧 Corrigiendo posiciones de ${fase} fase...`);
-
         // 1. Obtener todos los equipos de la fase
         const equipos = await window.app.clasificacionManager.obtenerClasificacionesUnaVez(fase);
 
-        console.log(`📊 ${equipos.length} equipos encontrados`);
-
         if (equipos.length === 0) {
-            alert(`⚠️ No hay equipos en ${fase} fase`);
+            mostrarNotificacion(`No hay equipos en ${fase} fase`, 'info');
             return;
         }
 
@@ -796,13 +769,7 @@ window.corregirPosicionesClasificacion = async (fase = 'primera') => {
             return difB - difA;
         });
 
-        // 3. Mostrar orden correcto
-        console.log('📋 Orden correcto por puntos:');
-        equipos.forEach((eq, i) => {
-            console.log(`${i + 1}. ${eq.equipo} - ${eq.pts} pts (posición actual: ${eq.posicion})`);
-        });
-
-        // 4. Actualizar posiciones en Firebase
+        // 3. Actualizar posiciones en Firebase
         for (let i = 0; i < equipos.length; i++) {
             const posicionCorrecta = i + 1;
             const equipo = equipos[i];
@@ -812,21 +779,13 @@ window.corregirPosicionesClasificacion = async (fase = 'primera') => {
                     ...equipo,
                     posicion: posicionCorrecta
                 });
-                console.log(`✅ ${equipo.equipo}: ${equipo.posicion} → ${posicionCorrecta}`);
-            } else {
-                console.log(`⏭️ ${equipo.equipo}: ya está en posición ${posicionCorrecta}`);
             }
         }
 
-        // 5. Recargar tabla
         await window.uiManager.cargarClasificacionFirebase(fase);
-
-        alert(`✅ Posiciones de ${fase} fase corregidas!\n\n${equipos.length} equipos reordenados por puntos.`);
-        console.log('✅ ¡Corrección completada!');
-
+        mostrarNotificacion(`Posiciones de ${fase} fase corregidas`, 'success');
     } catch (error) {
-        console.error('❌ Error corrigiendo posiciones:', error);
-        alert('❌ Error: ' + error.message);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -834,23 +793,10 @@ window.actualizarMarcadorGlobal = async (id, campo, incremento) => {
     try {
         const partido = app.partidosManager.getPartidoById(id);
 
-        // DEBUG INFO
-        console.log('=== ACTUALIZAR MARCADOR ===');
-        console.log('partido.id:', id);
-        console.log('partido.esLocal:', partido.esLocal);
-        console.log('campo (resultadoLocal/resultadoVisitante):', campo);
-        console.log('incremento:', incremento);
-        console.log('resultadoLocal actual:', partido.resultadoLocal);
-        console.log('resultadoVisitante actual:', partido.resultadoVisitante);
-
         // Determinar si es CBC quien está anotando
-        // Si CBC es LOCAL: campo debe ser 'resultadoLocal'
-        // Si CBC es VISITANTE: campo debe ser 'resultadoVisitante'
         const esCBCLocal = campo === 'resultadoLocal' && partido.esLocal;
         const esCBCVisitante = campo === 'resultadoVisitante' && !partido.esLocal;
         const esCBCEnDirecto = (esCBCLocal || esCBCVisitante) && incremento > 0;
-
-        console.log('esCBCLocal:', esCBCLocal, 'esCBCVisitante:', esCBCVisitante, 'esCBCEnDirecto:', esCBCEnDirecto);
 
         // Si es CBC anotando positivamente, mostrar selector de jugador
         if (esCBCEnDirecto) {
@@ -859,8 +805,6 @@ window.actualizarMarcadorGlobal = async (id, campo, incremento) => {
             // Si es rival o decremento, actualizar marcador directamente sin selector
             await app.partidosManager.actualizarMarcador(id, campo, incremento);
         }
-
-        console.log('Actualizando campo:', campo, 'con incremento:', incremento);
     } catch (error) {
         console.error('Error al actualizar marcador:', error);
     }
@@ -880,13 +824,9 @@ window.guardarActaGlobal = async (data) => {
 
     try {
         await app.actasManager.crearActa(data, partido);
-        alert('✅ Acta guardada correctamente');
-        // Volver al modo normal
-        // app.modoAdmin = 'partidos';
-        // app.creandoActa = false;
-        // app.renderizar();
+        mostrarNotificacion('Acta guardada correctamente', 'success');
     } catch (error) {
-        alert(`❌ ${error.message}`);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -898,9 +838,9 @@ window.cerrarActaGlobal = () => window.app.cerrarActa();
 window.eliminarActaGlobal = async (id) => {
     try {
         await app.actasManager.eliminarActa(id);
-        alert('✅ Acta eliminada correctamente');
+        mostrarNotificacion('Acta eliminada correctamente', 'success');
     } catch (error) {
-        alert(`❌ Error al eliminar acta: ${error.message}`);
+        mostrarNotificacion(`Error: ${error.message}`, 'error');
     }
 };
 
@@ -920,7 +860,7 @@ window.actualizarEstadisticaJugadorGlobal = (index, campo, valor) => {
 window.editarPartidoGlobal = (id) => {
     const partido = app.partidosManager.getPartidoById(id);
     if (!partido) {
-        alert('❌ Partido no encontrado');
+        mostrarNotificacion('Partido no encontrado', 'error');
         return;
     }
 
@@ -932,9 +872,9 @@ window.eliminarPartidoGlobal = async (id) => {
     if (confirm('¿Estás seguro de eliminar este partido?')) {
         try {
             await app.partidosManager.eliminarPartido(id);
-            alert('✅ Partido eliminado correctamente');
+            mostrarNotificacion('Partido eliminado correctamente', 'success');
         } catch (error) {
-            alert(`❌ Error: ${error.message}`);
+            mostrarNotificacion(`Error: ${error.message}`, 'error');
         }
     }
 };
@@ -954,49 +894,21 @@ window.registrarAnotacionGlobal = async (partidoId, jugador, puntos, partido, ca
             cuarto: partido.cuartoActual || ''
         }, anotacionesActuales);
 
-        // Usar el campo que viene como parámetro (desde Control de Marcador)
-        // Si no viene campo, usar el de CBC
+        // Determinar campo final
         const campoFinal = campo || (partido.esLocal ? 'resultadoLocal' : 'resultadoVisitante');
-        
-        // DEBUG ANTES DE ACTUALIZAR
-        console.log('ANTES de actualizar:', {
-            campo: campo,
-            campoFinal: campoFinal,
-            esLocal: partido.esLocal,
-            resultadoLocalActual: partido.resultadoLocal,
-            resultadoVisitanteActual: partido.resultadoVisitante,
-            puntosAñadir: puntos
-        });
-        
+
         // Actualizar marcador en el campo correcto
         await app.partidosManager.actualizarMarcador(partidoId, campoFinal, puntos);
-
-        // DEBUG DESPUÉS DE ACTUALIZAR
-        console.log('DESPUÉS de actualizar:', {
-            resultadoLocalNuevo: partido.resultadoLocal,
-            resultadoVisitanteNuevo: partido.resultadoVisitante
-        });
-
-        console.log(`✅ Anotación registrada: +${puntos} de ${jugador} en campo: ${campoFinal} (partido.esLocal: ${partido.esLocal})`);
     } catch (error) {
-        console.error('❌ Error al registrar anotación:', error);
-        alert('Error al registrar la anotación');
+        mostrarNotificacion('Error al registrar la anotación', 'error');
     }
 };
 
 window.saltarAnotacionGlobal = async (partidoId, puntos, campo) => {
     try {
-        // Obtener el partido para saber si es local o visitante
         const partido = app.partidosManager.getPartidoById(partidoId);
-        
-        // Usar el campo que viene como parámetro
-        // Si no viene, usar el de CBC
         const campoFinal = campo || (partido.esLocal ? 'resultadoLocal' : 'resultadoVisitante');
-        
-        // Solo actualizar marcador sin registrar jugador
         await app.partidosManager.actualizarMarcador(partidoId, campoFinal, puntos);
-        
-        console.log(`⏭️ Puntos saltados: +${puntos} en campo: ${campoFinal} (partido.esLocal: ${partido.esLocal})`);
     } catch (error) {
         console.error('❌ Error al actualizar marcador:', error);
     }
@@ -1024,8 +936,6 @@ window.cambiarFiltroFaseGlobal = (fase) => {
     const actas = window.app.actasManager.getActas();
     window.app.estadisticasManager.procesarDatosJugadores(actas);
 
-    console.log(`✅ Filtro de fase aplicado: ${fase}`);
-
     // Regenerar gráficas con los datos filtrados
     if (window.app.activeTab === 'estadisticas') {
         setTimeout(() => {
@@ -1044,6 +954,19 @@ window.cambiarFiltroFaseGlobal = (fase) => {
 // Iniciar la aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     app.iniciar();
+
+    // Registro del Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('🚀 ServiceWorker registrado con éxito');
+                })
+                .catch(error => {
+                    console.error('❌ Error al registrar ServiceWorker:', error);
+                });
+        });
+    }
 });
 
 // Exportar la app para uso en otros módulos si es necesario

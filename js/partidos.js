@@ -28,7 +28,6 @@ export class PartidosManager {
      */
     iniciarListener() {
         if (this.unsubscribe) {
-            console.warn('⚠️ Listener ya iniciado');
             return;
         }
 
@@ -40,14 +39,10 @@ export class PartidosManager {
                 ...doc.data()
             }));
 
-            console.log(`📊 ${this.partidos.length} partidos cargados`);
-
             // Notificar cambios
             if (this.onUpdate) {
                 this.onUpdate(this.partidos);
             }
-        }, (error) => {
-            console.error('❌ Error en listener de partidos:', error);
         });
     }
 
@@ -58,7 +53,6 @@ export class PartidosManager {
         if (this.unsubscribe) {
             this.unsubscribe();
             this.unsubscribe = null;
-            console.log('🛑 Listener de partidos detenido');
         }
     }
 
@@ -87,7 +81,7 @@ export class PartidosManager {
     getPartidosPorEstado(estado) {
         const hoy = new Date().toISOString().split('T')[0];
 
-        switch(estado) {
+        switch (estado) {
             case 'pendientes':
                 return this.partidos.filter(p => !p.finalizado && p.fecha >= hoy);
             case 'finalizados':
@@ -150,18 +144,14 @@ export class PartidosManager {
      * @returns {Promise<string>} ID del partido creado
      */
     async añadirPartido(data) {
-        console.log('🏀 Intentando añadir partido con datos:', data);
-
         const validation = this.validarPartido(data);
 
         if (!validation.valid) {
-            console.error('❌ Validación fallida:', validation.errors);
             throw new Error(validation.errors.join(', '));
         }
 
         // Obtener el logo automáticamente desde la configuración
         const logoRival = this.obtenerLogoRival(data.rival);
-        console.log('🖼️ Logo obtenido:', logoRival);
 
         const partidoData = {
             fecha: data.fecha,
@@ -176,17 +166,15 @@ export class PartidosManager {
             resultadoVisitante: data.resultadoVisitante || '',
             enDirecto: data.enDirecto || false,
             cuartoActual: data.cuartoActual || '',
-            fase: data.fase || 'primera'
+            fase: data.fase || 'primera',
+            sinActa: data.sinActa || false,
+            actaCerrada: data.actaCerrada || false
         };
-
-        console.log('💾 Datos a guardar en Firebase:', partidoData);
 
         try {
             const docRef = await addDoc(collection(this.db, 'partidos'), partidoData);
-            console.log('✅ Partido añadido con ID:', docRef.id);
             return docRef.id;
         } catch (error) {
-            console.error('❌ Error al añadir partido a Firebase:', error);
             throw error;
         }
     }
@@ -219,14 +207,14 @@ export class PartidosManager {
             resultadoVisitante: data.resultadoVisitante || '',
             enDirecto: data.enDirecto || false,
             cuartoActual: data.cuartoActual || '',
-            fase: data.fase || 'primera'
+            fase: data.fase || 'primera',
+            sinActa: data.sinActa || false,
+            actaCerrada: data.actaCerrada || false
         };
 
         try {
             await updateDoc(doc(this.db, 'partidos', id), partidoData);
-            console.log('✅ Partido actualizado:', id);
         } catch (error) {
-            console.error('❌ Error al actualizar partido:', error);
             throw error;
         }
     }
@@ -238,9 +226,7 @@ export class PartidosManager {
     async eliminarPartido(id) {
         try {
             await deleteDoc(doc(this.db, 'partidos', id));
-            console.log('✅ Partido eliminado:', id);
         } catch (error) {
-            console.error('❌ Error al eliminar partido:', error);
             throw error;
         }
     }
@@ -261,7 +247,6 @@ export class PartidosManager {
         const nuevoValor = parseInt(partido[campo] || 0) + incremento;
 
         if (nuevoValor < 0) {
-            console.warn('⚠️ No se puede tener marcador negativo');
             return;
         }
 
@@ -270,9 +255,7 @@ export class PartidosManager {
                 [campo]: nuevoValor.toString(),
                 enDirecto: true
             });
-            console.log(`✅ Marcador actualizado: ${campo} = ${nuevoValor}`);
         } catch (error) {
-            console.error('❌ Error al actualizar marcador:', error);
             throw error;
         }
     }
@@ -287,9 +270,7 @@ export class PartidosManager {
             await updateDoc(doc(this.db, 'partidos', id), {
                 cuartoActual: cuarto
             });
-            console.log(`✅ Cuarto actualizado: ${cuarto}`);
         } catch (error) {
-            console.error('❌ Error al actualizar cuarto:', error);
             throw error;
         }
     }
@@ -305,9 +286,7 @@ export class PartidosManager {
                 enDirecto: false,
                 cuartoActual: ''
             });
-            console.log('✅ Partido finalizado:', id);
         } catch (error) {
-            console.error('❌ Error al finalizar partido:', error);
             throw error;
         }
     }
@@ -322,9 +301,7 @@ export class PartidosManager {
                 enDirecto: true,
                 cuartoActual: 'Q1'
             });
-            console.log('🔴 Partido en directo iniciado:', id);
         } catch (error) {
-            console.error('❌ Error al iniciar directo:', error);
             throw error;
         }
     }
