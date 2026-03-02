@@ -951,22 +951,86 @@ window.cambiarFiltroFaseGlobal = (fase) => {
     window.app.renderizar();
 };
 
+/**
+ * Función de emergencia para limpiar toda la caché y forzar recarga (Contra-F5)
+ */
+window.forzarRefrescoPersonalizado = async () => {
+    try {
+        mostrarNotificacion('Limpiando caché y reiniciando...', 'info');
+
+        // 1. Desregistrar todos los Service Workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+            }
+        }
+
+        // 2. Borrar todas las cachés
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            for (const key of keys) {
+                await caches.delete(key);
+            }
+        }
+
+        // 3. Limpiar banderas de estado de localStorage que puedan estar causando bugs
+        // (Mantenemos filtroFase pero podríamos limpiar otros si fuera necesario)
+
+        // 4. Recarga forzada desde el servidor
+        window.location.reload(true);
+    } catch (error) {
+        window.location.reload();
+    }
+};
+
 // Iniciar la aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     app.iniciar();
 
-    // Registro del Service Worker para PWA
+    // Registro del Service Worker para PWA con detección de actualizaciones
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
                 .then(registration => {
-                    console.log('🚀 ServiceWorker registrado con éxito');
+                    // Detectar si hay una actualización esperando
+                    registration.onupdatefound = () => {
+                        const installingWorker = registration.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed') {
+                                if (navigator.serviceWorker.controller) {
+                                    // Nueva versión disponible, se actualizará en la próxima recarga
+                                    // o podemos forzarla
+                                    mostrarNotificacion('Nueva versión disponible. Actualizando...', 'info');
+                                    setTimeout(() => window.location.reload(), 1500);
+                                }
+                            }
+                        };
+                    };
                 })
                 .catch(error => {
-                    console.error('❌ Error al registrar ServiceWorker:', error);
+                    // Error silencioso
                 });
         });
+
+        // Recargar la página cuando el nuevo service worker tome el control
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+            }
+        });
     }
+
+    // Detector de fallos críticos: Si tras 8 segundos la app no ha renderizado nada en el contenedor, forzar refresco
+    setTimeout(() => {
+        const appContainer = document.getElementById('app');
+        if (appContainer && appContainer.innerHTML === "") {
+            console.warn('⚠️ Detectado posible fallo de carga persistente. Forzando refresco de emergencia...');
+            window.forzarRefrescoPersonalizado();
+        }
+    }, 8000);
 });
 
 // Exportar la app para uso en otros módulos si es necesario

@@ -848,10 +848,19 @@ export class UIManager {
 
                         <p class="text-center mt-4">
                             Para cualquier consulta sobre privacidad:
-                            <a href="mailto:cbcmanisesweb@gmail.com" class="text-orange-400 hover:text-orange-300 font-semibold">
-                                cbcmanisesweb@gmail.com
-                            </a>
+                            <a href="mailto:cbcmanisesweb@gmail.com" class="text-orange-400 hover:underline">cbcmanisesweb@gmail.com</a>
                         </p>
+                        
+                        <!-- Botón de emergencia para problemas de caché -->
+                        <div class="text-center mt-8 pt-4 border-t border-gray-700">
+                            <p class="text-[10px] text-gray-500 mb-2 italic">¿La web no carga bien o muestra datos antiguos?</p>
+                            <button 
+                                onclick="window.forzarRefrescoPersonalizado()" 
+                                class="text-[10px] bg-gray-700 hover:bg-gray-600 text-gray-400 px-3 py-1 rounded transition-colors uppercase tracking-widest font-bold"
+                            >
+                                🔄 Forzar Reinicio de Aplicación
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Separador -->
@@ -2030,6 +2039,25 @@ export class UIManager {
                     ` : `
                         <p class="text-gray-500 italic">No hay actas registradas aún.</p>
                     `}
+                </div>
+
+                <hr class="my-8">
+
+                <!-- Gestión de Sistema -->
+                <div>
+                    <h4 class="text-xl font-semibold text-orange-600 mb-4">⚙️ Gestión de Sistema</h4>
+                    <div class="bg-orange-50 border border-orange-200 rounded p-4 mb-6">
+                        <h5 class="font-semibold text-orange-800 mb-2">🧹 Limpieza de Caché (Contra-F5)</h5>
+                        <p class="text-sm text-orange-700 mb-4">
+                            Si notas que la web no se actualiza o muestra datos antiguos, pulsa este botón. Borrará toda la memoria temporal del navegador y forzará una recarga limpia.
+                        </p>
+                        <button
+                            onclick="window.forzarRefrescoPersonalizado()"
+                            class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 transition-colors"
+                        >
+                            🚀 Forzar Recarga Limpia
+                        </button>
+                    </div>
                 </div>
 
                 <hr class="my-8">
