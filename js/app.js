@@ -985,8 +985,18 @@ window.forzarRefrescoPersonalizado = async () => {
 };
 
 // Iniciar la aplicación cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    app.iniciar();
+document.addEventListener('DOMContentLoaded', async () => {
+    await app.iniciar();
+
+    // Ocultar pantalla de carga con transición
+    setTimeout(() => {
+        const loader = document.getElementById('loading-screen');
+        if (loader) {
+            loader.classList.add('fade-out');
+            // Eliminar del DOM tras la animación
+            setTimeout(() => loader.remove(), 500);
+        }
+    }, 500);
 
     // Registro del Service Worker para PWA con detección de actualizaciones
     if ('serviceWorker' in navigator) {
