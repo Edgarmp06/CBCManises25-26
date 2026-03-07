@@ -632,16 +632,24 @@ export class UIManager {
     generarLayoutPrincipal(estado) {
         const { activeTab, isAdmin, showAdminPanel } = estado;
 
+        // Chequear si mostramos o no el banner de notificaciones
+        const notificacionesActivadas = localStorage.getItem('notificacionesActivadas') === 'true' || Notification.permission === 'granted';
+        const bannerNotificacionesHTML = notificacionesActivadas ? '' : `
+                <div id="banner-notificaciones" class="w-full bg-orange-100 border-b border-orange-200 p-2 text-center text-sm flex flex-col md:flex-row justify-center items-center gap-2 animate-fade-in shadow-sm z-10 relative">
+                    <span class="text-orange-800 font-semibold text-xs md:text-sm">🔔 Recibe alertas de los partidos en directo</span>
+                    <button onclick="window.solicitarNotificacionesGlobal()" class="bg-orange-600 text-white px-3 py-1.5 md:py-1 rounded hover:bg-orange-700 font-bold ml-0 md:ml-2 shadow text-xs transition active:scale-95">
+                        Activar Notificaciones
+                    </button>
+                    <button onclick="localStorage.setItem('notificacionesActivadas', 'true'); document.getElementById('banner-notificaciones').style.display = 'none';" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-orange-500 hover:text-orange-700 p-1 font-bold text-lg leading-none" title="Cerrar aviso temporalmente">
+                        &times;
+                    </button>
+                </div>`;
+
         return `
             <div class="min-h-screen flex flex-col">
                 ${this.generarHeader(isAdmin, showAdminPanel)}
                 
-                <div class="w-full bg-orange-100 border-b border-orange-200 p-2 text-center text-sm flex justify-center items-center gap-2">
-                    <span class="text-orange-800 font-semibold">🔔 Recibe alertas de los partidos en directo</span>
-                    <button onclick="window.solicitarNotificacionesGlobal()" class="bg-orange-600 text-white px-3 py-1 rounded hover:bg-orange-700 font-bold ml-2 shadow-sm text-xs">
-                        Activar Notificaciones
-                    </button>
-                </div>
+                ${bannerNotificacionesHTML}
 
                 <div class="flex-1 max-w-4xl mx-auto p-4 w-full">
                     ${showAdminPanel

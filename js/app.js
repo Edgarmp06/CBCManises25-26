@@ -246,23 +246,52 @@ class CBCManisesApp {
      */
     async solicitarPermisosNotificaciones() {
         try {
+            console.log('Intentando solicitar permisos...');
             const permission = await Notification.requestPermission();
+            
             if (permission === 'granted') {
-                console.log('Permiso de notificaciones concedido.');
+                console.log('Permiso concedido. Registrando Service Worker especial para FCM...');
+                
+                // 1. Hay que registrar o obtener el Service Worker para las notificaciones
+                let swRegistration;
+                if ('serviceWorker' in navigator) {
+                    try {
+                       swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                       console.log('Service Worker de FCM registrado:', swRegistration);
+                    } catch (swError) {
+                       console.error('Error al registrar el SW de FCM:', swError);
+                    }
+                }
+
+                console.log('Obteniendo Token FCM...');
+                // 2. Pasamos el registro del service worker en las opciones
                 const token = await getToken(this.messaging, {
-                    vapidKey: 'BMCvO2stmPhCTM3Ndn3v_7CZ59OnOTM_3RxDNtr5Dijw0Hqvm1SQeQFQrXkyKV4jrkhcM9tq4HSFd6y0y7UcH1A'
+                    vapidKey: 'BMCvO2stmPhCTM3Ndn3v_7CZ59OnOTM_3RxDNtr5Dijw0Hqvm1SQeQFQrXkyKV4jrkhcM9tq4HSFd6y0y7UcH1A',
+                    serviceWorkerRegistration: swRegistration
                 });
                 
                 if (token) {
-                    console.log('FCM Token Exitoso:', token);
-                    // Aquí podrías guardar el token en Firestore si lo deseas en el futuro
+                    console.log('✅ FCM Token Exitoso:', token);
                     mostrarNotificacion('¡Notificaciones activadas!', 'success');
+                    
+                    // Guardamos en localStorage para esconder el cartelito de aviso de la UI
+                    localStorage.setItem('notificacionesActivadas', 'true');
+                    
+                    // Si el botón está en pantalla, lo ocultamos visualmente sin tener que recargar
+                    const bannerNotificaciones = document.getElementById('banner-notificaciones');
+                    if(bannerNotificaciones) bannerNotificaciones.style.display = 'none';
+                    
+                } else {
+                    console.warn('No se obtuvo token');
+                    mostrarNotificacion('No se pudo activar el modo notificaciones', 'error');
                 }
             } else {
                 console.warn('Permiso de notificaciones denegado.');
+                mostrarNotificacion('Permisos de notificación bloqueados', 'warning');
             }
         } catch (error) {
             console.error('Error al pedir permisos', error);
+            mostrarNotificacion('Error técnico al activar alertas', 'error');
         }
     }
 }
