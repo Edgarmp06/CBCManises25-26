@@ -31,6 +31,19 @@ class CBCManisesApp {
         
         try {
             this.messaging = getMessaging(this.app);
+            
+            // Listener para cuando tenemos la web abierta (Foreground)
+            onMessage(this.messaging, (payload) => {
+                console.log('Mensaje recibido en primer plano: ', payload);
+                const notificationTitle = payload.notification?.title || 'CBC Manises';
+                const notificationOptions = payload.notification?.body || 'Nueva notificación';
+                
+                // Mostramos un aviso visual en nuestra propia web
+                mostrarNotificacion(`${notificationTitle}: ${notificationOptions}`, 'info', 5000);
+                
+                // Opcional: Si quisiéramos forzar una notificación del sistema operativo incluso con la web abierta:
+                // new Notification(notificationTitle, { body: notificationOptions, icon: '/icons/icon-192x192.png' });
+            });
         } catch (error) {
             console.error("FCM Background no soportado", error);
         }
