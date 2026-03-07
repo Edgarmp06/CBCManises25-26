@@ -7,6 +7,7 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js';
 
 import { firebaseConfig } from './config.js';
 import { PartidosManager } from './partidos.js';
@@ -27,6 +28,12 @@ class CBCManisesApp {
         // Inicializar Firebase
         this.app = initializeApp(firebaseConfig);
         this.db = getFirestore(this.app);
+        
+        try {
+            this.messaging = getMessaging(this.app);
+        } catch (error) {
+            console.error("FCM Background no soportado", error);
+        }
 
         // Estado de la aplicación
         this.activeTab = 'calendario';
@@ -233,6 +240,31 @@ class CBCManisesApp {
             viendoActa: this.viendoActa
         };
     }
+
+    /**
+     * Solicita permiso para enviar notificaciones Push
+     */
+    async solicitarPermisosNotificaciones() {
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('Permiso de notificaciones concedido.');
+                const token = await getToken(this.messaging, {
+                    vapidKey: 'BMCvO2stmPhCTM3Ndn3v_7CZ59OnOTM_3RxDNtr5Dijw0Hqvm1SQeQFQrXkyKV4jrkhcM9tq4HSFd6y0y7UcH1A'
+                });
+                
+                if (token) {
+                    console.log('FCM Token Exitoso:', token);
+                    // Aquí podrías guardar el token en Firestore si lo deseas en el futuro
+                    mostrarNotificacion('¡Notificaciones activadas!', 'success');
+                }
+            } else {
+                console.warn('Permiso de notificaciones denegado.');
+            }
+        } catch (error) {
+            console.error('Error al pedir permisos', error);
+        }
+    }
 }
 
 // Crear instancia global de la aplicación
@@ -249,6 +281,7 @@ window.uiManager = uiManager;
 // === FUNCIONES DE NAVEGACIÓN ===
 window.cambiarTab = (tab) => app.cambiarTab(tab);
 window.cambiarFaseClasificacion = (fase) => app.cambiarFaseClasificacion(fase);
+window.solicitarNotificacionesGlobal = () => app.solicitarPermisosNotificaciones();
 window.cambiarJugadorGlobal = (nombre) => app.cambiarJugador(nombre);
 window.compartirPartidoGlobal = async (id) => {
     const partido = app.partidosManager.getPartidoById(id);

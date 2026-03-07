@@ -635,6 +635,13 @@ export class UIManager {
         return `
             <div class="min-h-screen flex flex-col">
                 ${this.generarHeader(isAdmin, showAdminPanel)}
+                
+                <div class="w-full bg-orange-100 border-b border-orange-200 p-2 text-center text-sm flex justify-center items-center gap-2">
+                    <span class="text-orange-800 font-semibold">🔔 Recibe alertas de los partidos en directo</span>
+                    <button onclick="window.solicitarNotificacionesGlobal()" class="bg-orange-600 text-white px-3 py-1 rounded hover:bg-orange-700 font-bold ml-2 shadow-sm text-xs">
+                        Activar Notificaciones
+                    </button>
+                </div>
 
                 <div class="flex-1 max-w-4xl mx-auto p-4 w-full">
                     ${showAdminPanel
