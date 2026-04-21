@@ -301,3 +301,37 @@
         width: 100%;
     }
 }
+
+@media print {
+    .no-print,
+    nav, header, footer,
+    #toast-container {
+        display: none !important;
+    }
+
+    body {
+        background: white !important;
+        font-size: 12px;
+    }
+
+    .bg-gradient-to-r,
+    .bg-gradient-to-br {
+        background: white !important;
+        color: black !important;
+    }
+
+    .shadow-md, .shadow-lg {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb;
+    }
+
+    .jugador-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    h1, h2, h3 {
+        color: black !important;
+    }
+}
+
