@@ -105,6 +105,9 @@ class CBCManisesApp {
 
         // Iniciar rotación de fotos de fondo
         this.iniciarRotacionFotos();
+
+        // Renderizar la aplicación inicialmente
+        this.renderizar();
     }
 
     /**
@@ -112,7 +115,10 @@ class CBCManisesApp {
      * @param {Array} partidos - Lista actualizada de partidos
      */
     onPartidosUpdate(partidos) {
-        this.renderizar();
+        // Solo renderizar si la aplicación ya está inicializada
+        if (this.activeTab !== undefined) {
+            this.renderizar();
+        }
     }
 
     /**
@@ -121,8 +127,13 @@ class CBCManisesApp {
      */
     onActasUpdate(actas) {
         // Procesar datos de jugadores para estadísticas
-        this.estadisticasManager.procesarDatosJugadores(actas);
-        this.renderizar();
+        if (this.estadisticasManager) {
+            this.estadisticasManager.procesarDatosJugadores(actas);
+        }
+        // Solo renderizar si la aplicación ya está inicializada
+        if (this.activeTab !== undefined) {
+            this.renderizar();
+        }
     }
 
     /**
@@ -243,14 +254,14 @@ class CBCManisesApp {
      */
     getEstado() {
         return {
-            activeTab: this.activeTab,
-            partidos: this.partidosManager.getPartidos(),
-            actas: this.actasManager.getActas(),
-            datosJugadores: this.estadisticasManager.getDatosJugadores(),
-            jugadorSeleccionado: this.estadisticasManager.getJugadorSeleccionado(),
-            isAdmin: this.adminManager.esAdmin(),
-            showAdminPanel: this.adminManager.panelVisible(),
-            viendoActa: this.viendoActa
+            activeTab: this.activeTab || 'calendario',
+            partidos: (this.partidosManager && this.partidosManager.getPartidos) ? this.partidosManager.getPartidos() : [],
+            actas: (this.actasManager && this.actasManager.getActas) ? this.actasManager.getActas() : [],
+            datosJugadores: (this.estadisticasManager && this.estadisticasManager.getDatosJugadores) ? this.estadisticasManager.getDatosJugadores() : {},
+            jugadorSeleccionado: (this.estadisticasManager && this.estadisticasManager.getJugadorSeleccionado) ? this.estadisticasManager.getJugadorSeleccionado() : null,
+            isAdmin: (this.adminManager && this.adminManager.esAdmin) ? this.adminManager.esAdmin() : false,
+            showAdminPanel: (this.adminManager && this.adminManager.panelVisible) ? this.adminManager.panelVisible() : false,
+            viendoActa: this.viendoActa || null
         };
     }
 
@@ -893,16 +904,18 @@ window.actualizarCuartoGlobal = async (id, cuarto) => {
     }
 };
 
-// === FUNCIONES DE ACTAS ===
-window.guardarActaGlobal = async (data) => {
-    const partido = app.partidosManager.getPartidoById(data.partidoId);
+// === FUNCIONES DE ADMINISTRACIÓN ===
+window.handleAdminLoginGlobal = () => {
+    app.adminManager.loginConPrompt();
+};
 
-    try {
-        await app.actasManager.crearActa(data, partido);
-        mostrarNotificacion('Acta guardada correctamente', 'success');
-    } catch (error) {
-        mostrarNotificacion(`Error: ${error.message}`, 'error');
-    }
+window.toggleAdminPanel = () => {
+    app.adminManager.toggleAdminPanel();
+    app.renderizar();
+};
+
+window.logout = () => {
+    app.adminManager.logout();
 };
 
 // === FUNCIONES DE ACTAS (VISTAS) ===
@@ -1027,51 +1040,271 @@ window.cambiarFiltroFaseGlobal = (fase) => {
 };
 
 /**
- * Función de emergencia para limpiar toda la caché y forzar recarga (Contra-F5)
+ * Función auxiliar para obtener nombre de fase
  */
-window.forzarRefrescoPersonalizado = async () => {
-    try {
-        mostrarNotificacion('Limpiando caché y reiniciando...', 'info');
-
-        // 1. Desregistrar todos los Service Workers
-        if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const registration of registrations) {
-                await registration.unregister();
-            }
-        }
-
-        // 2. Borrar todas las cachés
-        if ('caches' in window) {
-            const keys = await caches.keys();
-            for (const key of keys) {
-                await caches.delete(key);
-            }
-        }
-
-        // 3. Limpiar banderas de estado de localStorage que puedan estar causando bugs
-        // (Mantenemos filtroFase pero podríamos limpiar otros si fuera necesario)
-
-        // 4. Recarga forzada desde el servidor
-        window.location.reload(true);
-    } catch (error) {
-        window.location.reload();
+function getNombreFase(fase) {
+    switch (fase) {
+        case 'primera': return '1ª Fase';
+        case 'segunda': return '2ª Fase';
+        case 'amistosos': return 'Amistosos';
+        case 'copa_valenciana': return 'Copa Valenciana';
+        default: return fase;
     }
+}
+
+/**
+ * Mostrar comparación de rivalidad entre CBC Manises-Quart y un rival
+ */
+window.mostrarRivalidad = () => {
+    // Función auxiliar local
+    function getNombreFase(fase) {
+        switch (fase) {
+            case 'primera': return '1ª Fase';
+            case 'segunda': return '2ª Fase';
+            case 'amistosos': return 'Amistosos';
+            case 'copa_valenciana': return 'Copa Valenciana';
+            default: return fase;
+        }
+    }
+
+    const equipo1 = "CBC Manises-Quart"; // Siempre fijo
+    const equipo2 = document.getElementById('equipo-rivalidad-2').value;
+
+    if (!equipo2) {
+        mostrarNotificacion('Por favor selecciona un rival', 'warning');
+        return;
+    }
+
+    if (equipo1 === equipo2) {
+        mostrarNotificacion('El rival debe ser diferente a CBC Manises-Quart', 'warning');
+        return;
+    }
+
+    const partidos = window.app.partidosManager.getPartidos();
+    const actas = window.app.actasManager.getActas();
+
+    // Obtener partidos entre CBC Manises-Quart y el rival seleccionado
+    const partidosRivalidad = window.app.estadisticasManager.obtenerPartidosRivalidad(partidos, equipo1, equipo2);
+
+    if (partidosRivalidad.length === 0) {
+        document.getElementById('resultados-rivalidad').innerHTML = `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                <p class="text-yellow-800">⚠️ No se encontraron partidos entre CBC Manises-Quart y ${equipo2}</p>
+                <p class="text-sm text-yellow-600 mt-2">Esto puede deberse a que aún no se han jugado partidos en esta fase o no están registrados.</p>
+            </div>
+        `;
+        document.getElementById('resultados-rivalidad').classList.remove('hidden');
+        return;
+    }
+
+    // Calcular estadísticas de rivalidad
+    const estadisticas = window.app.estadisticasManager.calcularEstadisticasRivalidad(partidosRivalidad, actas, equipo1, equipo2);
+
+    // Generar HTML de resultados
+    const html = `
+        <div class="space-y-6">
+            <!-- Resumen de enfrentamientos -->
+            <div class="bg-gradient-to-r from-orange-50 to-blue-50 border border-orange-200 rounded-lg p-6">
+                <h3 class="text-xl font-bold text-center mb-4">⚔️ CBC Manises-Quart vs ${equipo2}</h3>
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-orange-100 rounded-lg p-4 shadow">
+                        <p class="text-2xl font-bold text-orange-600">${estadisticas.equipo1.victorias}</p>
+                        <p class="text-sm text-gray-700">Victorias CBC</p>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <p class="text-lg font-bold text-gray-700">${partidosRivalidad.length}</p>
+                        <p class="text-sm text-gray-600">Partidos</p>
+                    </div>
+                    <div class="bg-blue-100 rounded-lg p-4 shadow">
+                        <p class="text-2xl font-bold text-blue-600">${estadisticas.equipo2.victorias}</p>
+                        <p class="text-sm text-gray-700">Victorias ${equipo2}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de partidos -->
+            <div class="space-y-3">
+                <h4 class="text-lg font-bold text-gray-800">📅 Historial de Enfrentamientos</h4>
+                ${estadisticas.partidos.map((partido, index) => `
+                    <div class="bg-white border rounded-lg p-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">Jornada ${partido.jornada} • ${partido.fase ? getNombreFase(partido.fase) : 'Sin fase'}</span>
+                            <span class="text-sm text-gray-500">${partido.fecha}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1 text-center">
+                                <p class="font-bold ${partido.ganador === partido.local ? 'text-green-600' : 'text-gray-700'}">
+                                    ${partido.local}
+                                </p>
+                            </div>
+                            <div class="px-4">
+                                <p class="text-xl font-bold text-gray-800">${partido.resultado}</p>
+                            </div>
+                            <div class="flex-1 text-center">
+                                <p class="font-bold ${partido.ganador === partido.visitante ? 'text-green-600' : 'text-gray-700'}">
+                                    ${partido.visitante}
+                                </p>
+                            </div>
+                        </div>
+                        ${partido.estadisticas ? `
+                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div class="text-center">
+                                        <p class="font-semibold text-gray-700">Estadísticas ${partido.local}</p>
+                                        <p>Puntos: ${partido.estadisticas[partido.local]?.totalPuntos || 0}</p>
+                                        <p>Faltas: ${partido.estadisticas[partido.local]?.totalFaltas || 0}</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="font-semibold text-gray-700">Estadísticas ${partido.visitante}</p>
+                                        <p>Puntos: ${partido.estadisticas[partido.visitante]?.totalPuntos || 0}</p>
+                                        <p>Faltas: ${partido.estadisticas[partido.visitante]?.totalFaltas || 0}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    document.getElementById('resultados-rivalidad').innerHTML = html;
+    document.getElementById('resultados-rivalidad').classList.remove('hidden');
+};
+
+/**
+ * Comparación de estadísticas entre dos jugadores del CBC
+ */
+window.mostrarDueloJugadores = () => {
+    const nombre1 = document.getElementById('jugador-duelo-1').value;
+    const nombre2 = document.getElementById('jugador-duelo-2').value;
+
+    if (!nombre1 || !nombre2) {
+        mostrarNotificacion('Selecciona dos jugadores para comparar', 'warning');
+        return;
+    }
+    if (nombre1 === nombre2) {
+        mostrarNotificacion('Selecciona dos jugadores diferentes', 'warning');
+        return;
+    }
+
+    const datosJugadores = window.app.estadisticasManager.getDatosJugadores();
+    const j1 = datosJugadores[nombre1];
+    const j2 = datosJugadores[nombre2];
+
+    if (!j1 || !j2) {
+        mostrarNotificacion('No hay datos disponibles para estos jugadores', 'warning');
+        return;
+    }
+
+    const pj1 = j1.partidos.length, pj2 = j2.partidos.length;
+    const avg1 = pj1 > 0 ? j1.totalPts / pj1 : 0;
+    const avg2 = pj2 > 0 ? j2.totalPts / pj2 : 0;
+    const maxPts1 = Math.max(...j1.partidos.map(p => p.pts), 0);
+    const maxPts2 = Math.max(...j2.partidos.map(p => p.pts), 0);
+    const pctTL1 = j1.totalTL_int > 0 ? (j1.totalTL_an / j1.totalTL_int * 100) : 0;
+    const pctTL2 = j2.totalTL_int > 0 ? (j2.totalTL_an / j2.totalTL_int * 100) : 0;
+    const pctT2_1 = j1.totalT2_int > 0 ? (j1.totalT2_an / j1.totalT2_int * 100) : 0;
+    const pctT2_2 = j2.totalT2_int > 0 ? (j2.totalT2_an / j2.totalT2_int * 100) : 0;
+    const pctT3_1 = j1.totalT3_int > 0 ? (j1.totalT3_an / j1.totalT3_int * 100) : 0;
+    const pctT3_2 = j2.totalT3_int > 0 ? (j2.totalT3_an / j2.totalT3_int * 100) : 0;
+
+    function cmp(v1, v2, higherIsBetter = true) {
+        if (v1 === v2) return 'tie';
+        return (v1 > v2) === higherIsBetter ? 'j1' : 'j2';
+    }
+
+    const stats = [
+        { label: 'Partidos Jugados',   d1: pj1,                    d2: pj2,                    winner: cmp(pj1, pj2) },
+        { label: 'Puntos Totales',     d1: j1.totalPts,             d2: j2.totalPts,             winner: cmp(j1.totalPts, j2.totalPts) },
+        { label: 'Media PTS/Partido',  d1: avg1.toFixed(1),         d2: avg2.toFixed(1),         winner: cmp(avg1, avg2) },
+        { label: 'Máx. Puntos',        d1: maxPts1,                 d2: maxPts2,                 winner: cmp(maxPts1, maxPts2) },
+        { label: 'Triples Anotados',   d1: j1.totalT3_an,           d2: j2.totalT3_an,           winner: cmp(j1.totalT3_an, j2.totalT3_an) },
+        { label: '% Triples (T3)',     d1: pctT3_1.toFixed(0) + '%',d2: pctT3_2.toFixed(0) + '%',winner: cmp(pctT3_1, pctT3_2) },
+        { label: '% Dobles (T2)',      d1: pctT2_1.toFixed(0) + '%',d2: pctT2_2.toFixed(0) + '%',winner: cmp(pctT2_1, pctT2_2) },
+        { label: '% Tiros Libres',     d1: pctTL1.toFixed(0) + '%', d2: pctTL2.toFixed(0) + '%', winner: cmp(pctTL1, pctTL2) },
+        { label: 'Faltas Totales',     d1: j1.totalFC,              d2: j2.totalFC,              winner: cmp(j1.totalFC, j2.totalFC, false) },
+    ];
+
+    const wins1 = stats.filter(s => s.winner === 'j1').length;
+    const wins2 = stats.filter(s => s.winner === 'j2').length;
+
+    const rowsHtml = stats.map(s => {
+        const w1 = s.winner === 'j1';
+        const w2 = s.winner === 'j2';
+        const tie = s.winner === 'tie';
+        const cls1 = w1 ? 'bg-orange-100 text-orange-700 font-black rounded-lg px-2 py-1' : tie ? 'text-gray-500 px-2 py-1' : 'text-gray-400 px-2 py-1';
+        const cls2 = w2 ? 'bg-blue-100 text-blue-700 font-black rounded-lg px-2 py-1' : tie ? 'text-gray-500 px-2 py-1' : 'text-gray-400 px-2 py-1';
+        const badge1 = w1 ? ' 🏆' : tie ? ' 🤝' : '';
+        const badge2 = w2 ? '🏆 ' : tie ? '🤝 ' : '';
+        return `
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                <td class="py-2 px-3 text-right"><span class="text-base ${cls1}">${s.d1}${badge1}</span></td>
+                <td class="py-2 px-2 text-center text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">${s.label}</td>
+                <td class="py-2 px-3 text-left"><span class="text-base ${cls2}">${badge2}${s.d2}</span></td>
+            </tr>`;
+    }).join('');
+
+    const nombre1Short = j1.nombre.split(' ').slice(0, 2).join(' ');
+    const nombre2Short = j2.nombre.split(' ').slice(0, 2).join(' ');
+
+    document.getElementById('resultados-duelo-jugadores').innerHTML = `
+        <div class="space-y-4">
+            <div class="grid grid-cols-3 gap-2 text-center items-center bg-gradient-to-r from-orange-50 via-white to-blue-50 rounded-xl p-4 border border-gray-200">
+                <div>
+                    <p class="text-xl font-black text-orange-600">#${j1.dorsal}</p>
+                    <p class="text-sm font-bold text-gray-800 leading-tight">${nombre1Short}</p>
+                    <div class="mt-2 bg-orange-600 text-white rounded-full px-3 py-1 inline-block text-xs font-bold">${wins1} victorias</div>
+                </div>
+                <div class="text-2xl">⚔️</div>
+                <div>
+                    <p class="text-xl font-black text-blue-600">#${j2.dorsal}</p>
+                    <p class="text-sm font-bold text-gray-800 leading-tight">${nombre2Short}</p>
+                    <div class="mt-2 bg-blue-600 text-white rounded-full px-3 py-1 inline-block text-xs font-bold">${wins2} victorias</div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full"><tbody>${rowsHtml}</tbody></table>
+            </div>
+        </div>`;
+    document.getElementById('resultados-duelo-jugadores').classList.remove('hidden');
 };
 
 // Iniciar la aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', async () => {
-    await app.iniciar();
+    try {
+        console.log('DOM loaded, starting app...');
+        await app.iniciar();
+        console.log('App initialized and rendered successfully');
 
-    // Ocultar pantalla de carga con transición
-    setTimeout(() => {
+        // Esperar un poco más para asegurar que todo esté renderizado
+        setTimeout(() => {
+            const loader = document.getElementById('loading-screen');
+            if (loader) {
+                console.log('Hiding loading screen...');
+                loader.classList.add('fade-out');
+                // Eliminar del DOM tras la animación
+                setTimeout(() => {
+                    loader.remove();
+                    console.log('Loading screen removed');
+                }, 500);
+            } else {
+                console.warn('Loading screen not found');
+            }
+        }, 1000); // Aumentar el delay
+    } catch (error) {
+        console.error('Error during app initialization:', error);
+        // Mostrar error en pantalla
         const loader = document.getElementById('loading-screen');
         if (loader) {
-            loader.classList.add('fade-out');
-            // Eliminar del DOM tras la animación
-            setTimeout(() => loader.remove(), 500);
+            loader.innerHTML = `
+                <div class="loader-spinner"></div>
+                <div class="loader-text">Error al cargar la aplicación</div>
+                <div class="text-xs text-white mt-2">Revisa la consola para más detalles</div>
+                <pre class="text-xs text-red-300 mt-2">${error.message}</pre>
+            `;
         }
-    }, 500);
+    }
 
     // Registro del Service Worker para PWA con detección de actualizaciones
     if ('serviceWorker' in navigator) {

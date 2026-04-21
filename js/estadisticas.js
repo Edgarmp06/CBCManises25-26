@@ -80,6 +80,7 @@ export class EstadisticasManager {
 
                 this.datosJugadores[jugador.nombre].partidos.push({
                     jornada: acta.jornada,
+                    fase: acta.fase || 'primera',
                     pts: jugador.pts,
                     min: jugador.min,
                     tl_an: jugador.tl.anotados,
@@ -442,7 +443,15 @@ export class EstadisticasManager {
             return;
         }
 
-        const partidosOrdenados = [...datos.partidos].sort((a, b) =>
+        const partidosFiltrados = this.filtroFase === 'todas'
+            ? datos.partidos
+            : datos.partidos.filter(p => p.fase === this.filtroFase);
+
+        if (partidosFiltrados.length === 0) {
+            return;
+        }
+
+        const partidosOrdenados = [...partidosFiltrados].sort((a, b) =>
             parseInt(a.jornada) - parseInt(b.jornada)
         );
         const jornadas = partidosOrdenados.map(p => `J${p.jornada}`);
@@ -679,5 +688,114 @@ export class EstadisticasManager {
             totalT2: totalT2_an,
             totalT3: totalT3_an
         };
+    }
+
+    /**
+     * Obtiene partidos entre dos equipos rivales
+     * @param {Array} partidos - Lista de todos los partidos
+     * @param {string} equipo1 - Nombre del primer equipo
+     * @param {string} equipo2 - Nombre del segundo equipo
+     * @returns {Array} Partidos entre los dos equipos
+     */
+    obtenerPartidosRivalidad(partidos, equipo1, equipo2) {
+        if (!equipo1 || !equipo2 || equipo1 === equipo2) return [];
+
+        return partidos.filter(partido => {
+            const equipos = [partido.rival, 'CBC Manises-Quart'];
+            return equipos.includes(equipo1) && equipos.includes(equipo2);
+        });
+    }
+
+    /**
+     * Calcula estadísticas totales del equipo desde una lista de actas
+     * @param {Array} actas - Lista de actas
+     * @returns {Object} Estadísticas totales del equipo
+     */
+    calcularEstadisticasEquipo(actas) {
+        const totales = {
+            totalPuntos: 0,
+            totalFaltas: 0,
+            totalTL_anotados: 0,
+            totalTL_intentos: 0,
+            totalT2_anotados: 0,
+            totalT2_intentos: 0,
+            totalT3_anotados: 0,
+            totalT3_intentos: 0
+        };
+
+        actas.forEach(acta => {
+            if (!acta.jugadores || !Array.isArray(acta.jugadores)) return;
+
+            acta.jugadores.forEach(jugador => {
+                totales.totalPuntos += jugador.pts || 0;
+                totales.totalFaltas += jugador.fc || 0;
+                totales.totalTL_anotados += (jugador.tl?.anotados || 0);
+                totales.totalTL_intentos += (jugador.tl?.intentos || 0);
+                totales.totalT2_anotados += (jugador.t2?.anotados || 0);
+                totales.totalT2_intentos += (jugador.t2?.intentos || 0);
+                totales.totalT3_anotados += (jugador.t3?.anotados || 0);
+                totales.totalT3_intentos += (jugador.t3?.intentos || 0);
+            });
+        });
+
+        return totales;
+    }
+    calcularEstadisticasRivalidad(partidosRivalidad, actas, equipo1, equipo2) {
+        const estadisticas = {
+            equipo1: { nombre: equipo1, victorias: 0, derrotas: 0, partidos: [] },
+            equipo2: { nombre: equipo2, victorias: 0, derrotas: 0, partidos: [] },
+            partidos: []
+        };
+
+        partidosRivalidad.forEach(partido => {
+            const acta = actas.find(a => a.partidoId === partido.id);
+            const esLocalEquipo1 = (partido.esLocal && equipo1 === 'CBC Manises-Quart') ||
+                                 (!partido.esLocal && partido.rival === equipo1);
+
+            const resultado = {
+                fecha: partido.fecha,
+                jornada: partido.jornada,
+                fase: partido.fase,
+                local: partido.esLocal ? 'CBC Manises-Quart' : partido.rival,
+                visitante: partido.esLocal ? partido.rival : 'CBC Manises-Quart',
+                resultado: `${partido.resultadoLocal || 0} - ${partido.resultadoVisitante || 0}`,
+                ganador: null,
+                estadisticas: null
+            };
+
+            // Determinar ganador
+            if (partido.finalizado) {
+                const puntosLocal = parseInt(partido.resultadoLocal) || 0;
+                const puntosVisitante = parseInt(partido.resultadoVisitante) || 0;
+
+                if (puntosLocal > puntosVisitante) {
+                    resultado.ganador = resultado.local;
+                } else if (puntosVisitante > puntosLocal) {
+                    resultado.ganador = resultado.visitante;
+                }
+
+                // Contar victorias/derrotas
+                if (resultado.ganador === equipo1) {
+                    estadisticas.equipo1.victorias++;
+                    estadisticas.equipo2.derrotas++;
+                } else if (resultado.ganador === equipo2) {
+                    estadisticas.equipo2.victorias++;
+                    estadisticas.equipo1.derrotas++;
+                }
+            }
+
+            // Añadir estadísticas del acta si existe
+            if (acta && acta.jugadores) {
+                const statsEquipo1 = this.calcularEstadisticasEquipo([acta]);
+                resultado.estadisticas = {
+                    [equipo1]: statsEquipo1,
+                    [equipo2]: null // Por ahora solo calculamos para el equipo local
+                };
+            }
+
+            estadisticas.partidos.push(resultado);
+        });
+
+        return estadisticas;
     }
 }

@@ -25,7 +25,24 @@ export const EQUIPOS_RIVALES = [
     { nombre: 'CB Escolapias CMV', logo: 'escolapias.jpg' },
     { nombre: 'Flex Básquet Riba-Roja', logo: 'riba-roja.jpg' },
     { nombre: 'Academia Petraher B', logo: 'petraher.jpg' },
-    { nombre: 'S.D. El Pilar Valencia A', logo: 'el-pilar.jpg' }
+    { nombre: 'S.D. El Pilar Valencia A', logo: 'el-pilar.jpg' },
+
+    // AMISTOSOS
+    { nombre: 'Godella Infantil', logo: 'godella.jpg' },
+    { nombre: 'Valencia Basket Infantil', logo: 'valencia-basket.jpg' },
+    { nombre: 'Valencia Basket Azul', logo: 'valencia-basket.jpg' }
+];
+
+// Equipos de Copa Valenciana (si es necesario separarlos)
+export const EQUIPOS_COPA_VALENCIANA = [
+    // Añade aquí los equipos de copa cuando los tengas
+    // Ejemplo: { nombre: 'Equipo Copa 1', logo: 'logo1.jpg' },
+];
+
+// Equipos de Masters Only (si es necesario)
+export const EQUIPOS_MASTERS_ONLY = [
+    // Añade aquí los equipos de masters cuando los tengas
+    // Ejemplo: { nombre: 'Equipo Masters 1', logo: 'logo1.jpg' },
 ];
 
 // Ubicaciones de los pabellones

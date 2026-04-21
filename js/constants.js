@@ -216,7 +216,7 @@ export const INFO_EQUIPO = {
     NOMBRE: 'CBC Manises-Quart',
     CATEGORIA: 'Cadete Masculino',
     TEMPORADA: '2025/26',
-    COMPETICION: 'Preferente Grupo D - IR Campeonato 1ª Zonal Grupo D',
+    COMPETICION: 'Amistosos / Copa Valenciana',
     LOGO: 'logos/cbc-manises.jpg',
     PABELLON_LOCAL: 'Pabellón Alberto Arnal (Manises)'
 };
@@ -266,6 +266,8 @@ export const CLASIFICACION_PRIMERA_FASE = [
 
 export const CLASIFICACION_SEGUNDA_FASE = [];
 
+export const CLASIFICACION_COPA_VALENCIANA = [];
+
 // Exportar objeto con todas las constantes
 export default {
     TABS,
@@ -293,5 +295,6 @@ export default {
     BREAKPOINTS,
     ANIMACIONES,
     CLASIFICACION_PRIMERA_FASE,
-    CLASIFICACION_SEGUNDA_FASE
+    CLASIFICACION_SEGUNDA_FASE,
+    CLASIFICACION_COPA_VALENCIANA
 };

@@ -6,7 +6,7 @@
  */
 
 import { formatearFecha, formatearFechaCorta, mostrarNotificacion, compartirResultado } from './utils.js';
-import { INFO_EQUIPO, URLS, JUGADORES_EQUIPO, CLASIFICACION_PRIMERA_FASE, CLASIFICACION_SEGUNDA_FASE } from './constants.js';
+import { INFO_EQUIPO, URLS, JUGADORES_EQUIPO, CLASIFICACION_PRIMERA_FASE, CLASIFICACION_SEGUNDA_FASE, CLASIFICACION_COPA_VALENCIANA } from './constants.js';
 import { UBICACIONES, EQUIPOS_RIVALES } from './config.js';
 
 /**
@@ -31,28 +31,60 @@ export class UIManager {
      * Renderiza toda la aplicación
      */
     renderizar() {
-        const appContainer = document.getElementById('app');
-        if (!appContainer) return;
-
-        const estado = this.app.getEstado();
-
-        // Si estamos viendo un acta, mostrar solo eso
-        if (estado.viendoActa) {
-            appContainer.innerHTML = this.generarVistaActa(estado.viendoActa);
+        // Verificar que el UI Manager esté inicializado
+        if (!this.app) {
+            console.warn('UI Manager no inicializado, omitiendo renderizado');
             return;
         }
 
-        // Renderizado principal
-        appContainer.innerHTML = this.generarLayoutPrincipal(estado);
-
-        // Si se está mostrando el panel de admin, configurar event listeners
-        if (estado.showAdminPanel) {
-            this.configurarEventListenersAdmin();
+        const appContainer = document.getElementById('app');
+        if (!appContainer) {
+            console.error('No se encontró el contenedor #app');
+            return;
         }
 
-        // Si es admin, configurar el modal de edición (siempre que esté disponible)
-        if (estado.isAdmin) {
-            this.configurarModalEditarPartido();
+        try {
+            const estado = this.app.getEstado();
+
+            // Si estamos viendo un acta, mostrar solo eso
+            if (estado.viendoActa) {
+                appContainer.innerHTML = this.generarVistaActa(estado.viendoActa);
+                return;
+            }
+
+            // Renderizado principal
+            appContainer.innerHTML = this.generarLayoutPrincipal(estado);
+
+            // Si se está mostrando el panel de admin, configurar event listeners
+            if (estado.showAdminPanel) {
+                this.configurarEventListenersAdmin();
+            }
+
+            // Si es admin, configurar el modal de edición (siempre que esté disponible)
+            if (estado.isAdmin) {
+                this.configurarModalEditarPartido();
+            }
+        } catch (error) {
+            console.error('Error durante el renderizado:', error);
+            // Fallback a mensaje de error
+            appContainer.innerHTML = `
+                <div class="min-h-screen flex flex-col">
+                    <div class="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-4 md:p-6 shadow-lg">
+                        <div class="max-w-4xl mx-auto">
+                            <h2 class="text-2xl md:text-3xl font-bold">🏀 CBC Manises-Quart</h2>
+                            <p class="text-sm md:text-base text-orange-100">Error al renderizar la aplicación</p>
+                        </div>
+                    </div>
+                    <div class="flex-1 max-w-4xl mx-auto p-4 w-full">
+                        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                            <div class="text-6xl mb-4">❌</div>
+                            <h3 class="text-xl font-bold text-red-700 mb-2">Error de renderizado</h3>
+                            <p class="text-gray-500">Ha ocurrido un error al mostrar la aplicación.</p>
+                            <p class="text-xs text-gray-400 mt-2">Revisa la consola para más detalles.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
     }
 
@@ -763,6 +795,10 @@ export class UIManager {
                             <select id="editar-fase" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
                                 <option value="primera">🟡 Primera Fase</option>
                                 <option value="segunda">🔵 Segunda Fase</option>
+                                <option value="amistosos">🤝 Amistosos</option>
+                                <option value="copa_valenciana">🏆 Copa Valenciana</option>
+                                <option value="copa">🏆 Copa</option>
+                                <option value="masters_only">👑 Masters Only</option>
                             </select>
                         </div>
 
@@ -952,7 +988,7 @@ export class UIManager {
      * @returns {string} HTML del contenido principal
      */
     generarContenidoPrincipal(estado) {
-        const { activeTab, partidos, actas, datosJugadores, jugadorSeleccionado } = estado;
+        const { activeTab, partidos = [], actas = [], datosJugadores = {}, jugadorSeleccionado } = estado;
 
         // Filtrar partidos
         const partidosCalendario = partidos
@@ -962,8 +998,15 @@ export class UIManager {
                 return new Date(a.fecha) - new Date(b.fecha);
             });
 
-        // Obtener el filtro actual de fase
-        const filtroFaseActual = this.app.estadisticasManager.getFiltroFase();
+        // Obtener el filtro actual de fase (con fallback)
+        let filtroFaseActual = 'todas';
+        try {
+            if (this.app && this.app.estadisticasManager) {
+                filtroFaseActual = this.app.estadisticasManager.getFiltroFase();
+            }
+        } catch (error) {
+            console.warn('Error obteniendo filtro de fase:', error);
+        }
 
         const partidosFinalizados = partidos
             .filter(p => p.finalizado)
@@ -1088,6 +1131,16 @@ export class UIManager {
                         class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'segunda' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
                         🔵 2ª Fase
                     </button>
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('amistosos')"
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'amistosos' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        🤝 Amistosos
+                    </button>
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('copa_valenciana')"
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'copa_valenciana' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        🏆 Copa Valenciana
+                    </button>
                 </div>
             </div>
         `;
@@ -1099,12 +1152,12 @@ export class UIManager {
                     <div class="bg-white rounded-lg shadow-md p-8 text-center">
                         <div class="text-6xl mb-4">🏆</div>
                         <h3 class="text-xl font-bold text-gray-700 mb-2">
-                            ${filtroActual === 'todas' ? 'No hay resultados aún' : `No hay resultados de ${filtroActual === 'primera' ? '1ª Fase' : '2ª Fase'}`}
+                            ${filtroActual === 'todas' ? 'No hay resultados aún' : `No hay resultados de ${this.getNombreFase(filtroActual)}`}
                         </h3>
                         <p class="text-gray-500 mb-4">
                             ${filtroActual === 'todas'
                     ? 'Los resultados aparecerán aquí una vez finalizados los partidos'
-                    : `No hay partidos de ${filtroActual === 'primera' ? '1ª Fase' : '2ª Fase'} todavía.`}
+                    : `No hay partidos de ${this.getNombreFase(filtroActual)} todavía.`}
                         </p>
                         ${filtroActual !== 'todas' ? `
                             <button
@@ -1157,6 +1210,16 @@ export class UIManager {
                         class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'segunda' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
                         🔵 2ª Fase
                     </button>
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('amistosos')"
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'amistosos' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        🤝 Amistosos
+                    </button>
+                    <button
+                        onclick="window.cambiarFiltroFaseGlobal('copa_valenciana')"
+                        class="px-4 py-2 rounded-lg font-semibold transition-all ${filtroActual === 'copa_valenciana' ? 'bg-orange-600 text-white ring-2 ring-orange-400' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}">
+                        🏆 Copa Valenciana
+                    </button>
                 </div>
             </div>
         `;
@@ -1177,11 +1240,68 @@ export class UIManager {
 
         const jugadores = Object.values(datosJugadores).sort((a, b) => b.totalPts - a.totalPts);
 
+        // Calcular racha actual
+        const todosPartidos = this.app.partidosManager.getPartidos()
+            .filter(p => p.finalizado)
+            .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        let racha = 0, tipoRacha = null;
+        for (const p of todosPartidos) {
+            const loc = parseInt(p.resultadoLocal || 0);
+            const vis = parseInt(p.resultadoVisitante || 0);
+            const gano = p.esLocal ? loc > vis : vis > loc;
+            const tipo = gano ? 'V' : 'D';
+            if (tipoRacha === null) tipoRacha = tipo;
+            if (tipo === tipoRacha) racha++;
+            else break;
+        }
+        const rachaHTML = racha > 0 ? `
+            <div class="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm ${tipoRacha === 'V' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                ${tipoRacha === 'V' ? '🔥' : '❄️'} Racha: ${racha} ${tipoRacha === 'V' ? `victoria${racha > 1 ? 's' : ''}` : `derrota${racha > 1 ? 's' : ''}`} seguida${racha > 1 ? 's' : ''}
+            </div>` : '';
+
+        // Tabla de líderes
+        const medias = [...jugadores].sort((a, b) => (b.totalPts / b.partidos.length) - (a.totalPts / a.partidos.length));
+        const valoracion = [...jugadores].sort((a, b) => (b.totalPts + b.totalT3_an - b.totalFC) - (a.totalPts + a.totalT3_an - a.totalFC));
+        const triples = [...jugadores].sort((a, b) => b.totalT3_an - a.totalT3_an);
+        const medals = ['🥇', '🥈', '🥉'];
+        const categorias = [
+            { titulo: '🏅 Máx. Anotador',  lista: jugadores,   valor: j => `${j.totalPts} pts` },
+            { titulo: '📈 Mejor Media',     lista: medias,      valor: j => `${(j.totalPts / j.partidos.length).toFixed(1)} pts/P` },
+            { titulo: '⭐ Valoración',      lista: valoracion,  valor: j => `${j.totalPts + j.totalT3_an - j.totalFC} val` },
+            { titulo: '🎯 Más Triples',     lista: triples,     valor: j => `${j.totalT3_an} T3` },
+        ];
+        const lideres = `
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <h4 class="text-lg font-bold text-gray-800">🏆 Tabla de Líderes</h4>
+                    ${rachaHTML}
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    ${categorias.map(cat => `
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">${cat.titulo}</p>
+                            ${cat.lista.slice(0, 3).map((j, i) => `
+                                <div class="flex items-center justify-between py-1 ${i < 2 ? 'border-b border-gray-100' : ''}">
+                                    <div class="flex items-center gap-1 min-w-0">
+                                        <span class="text-sm">${medals[i]}</span>
+                                        <span class="text-xs text-gray-700 font-medium truncate">${j.nombre.split(' ')[0]}</span>
+                                    </div>
+                                    <span class="text-xs font-bold text-orange-600 ml-1 whitespace-nowrap">${cat.valor(j)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
         return `
             <div class="space-y-6">
                 <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">📊 Estadísticas de la Temporada</h3>
 
                 ${botonesFilter}
+
+                ${lideres}
 
                 <!-- Gráficas del equipo -->
                 <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
@@ -1297,6 +1417,79 @@ export class UIManager {
                         </div>
                     `;
             })() : ''}
+
+                <!-- Duelo de Jugadores -->
+                <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+                    <h4 class="text-lg md:text-xl font-bold text-gray-800 mb-2">👤⚔️👤 Duelo de Jugadores</h4>
+                    <p class="text-sm text-gray-600 mb-4">Compara las estadísticas de dos jugadores del CBC Manises-Quart</p>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jugador 1</label>
+                            <select id="jugador-duelo-1" class="w-full border rounded px-3 py-2">
+                                <option value="">-- Jugador 1 --</option>
+                                ${jugadores.map(j => `<option value="${j.nombre}">#${j.dorsal} ${j.nombre}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jugador 2</label>
+                            <select id="jugador-duelo-2" class="w-full border rounded px-3 py-2">
+                                <option value="">-- Jugador 2 --</option>
+                                ${jugadores.map(j => `<option value="${j.nombre}">#${j.dorsal} ${j.nombre}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-center mb-2">
+                        <button
+                            onclick="window.mostrarDueloJugadores()"
+                            class="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-all"
+                        >
+                            ⚔️ Comparar Jugadores
+                        </button>
+                    </div>
+
+                    <div id="resultados-duelo-jugadores" class="hidden mt-4"></div>
+                </div>
+
+                <!-- Sección de Rivalidad -->
+                <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+                    <h4 class="text-lg md:text-xl font-bold text-gray-800 mb-4">⚔️ Rivalidad CBC Manises-Quart</h4>
+                    <p class="text-sm text-gray-600 mb-4">Compara enfrentamientos directos entre CBC Manises-Quart y cualquier rival de la temporada</p>
+
+                    <!-- Selectores de equipos -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Equipo 1</label>
+                            <select id="equipo-rivalidad-1" class="w-full border rounded px-3 py-2 bg-orange-50" disabled>
+                                <option value="CBC Manises-Quart">CBC Manises-Quart</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Equipo 2 (Rival)</label>
+                            <select id="equipo-rivalidad-2" class="w-full border rounded px-3 py-2">
+                                <option value="">-- Selecciona rival --</option>
+                                ${EQUIPOS_RIVALES.map(equipo => `
+                                    <option value="${equipo.nombre}">${equipo.nombre}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button
+                            onclick="window.mostrarRivalidad()"
+                            class="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition-all"
+                        >
+                            ⚔️ Comparar con CBC Manises-Quart
+                        </button>
+                    </div>
+
+                    <!-- Resultados de rivalidad -->
+                    <div id="resultados-rivalidad" class="mt-6 hidden">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -1311,8 +1504,9 @@ export class UIManager {
     generarPartidoCard(partido, actas, isAdmin) {
         const equipoLocal = partido.esLocal ? INFO_EQUIPO.NOMBRE : partido.rival;
         const equipoVisitante = partido.esLocal ? partido.rival : INFO_EQUIPO.NOMBRE;
-        const logoLocal = partido.esLocal ? INFO_EQUIPO.LOGO : `logos/${partido.logoRival}`;
-        const logoVisitante = partido.esLocal ? `logos/${partido.logoRival}` : INFO_EQUIPO.LOGO;
+        const rivalLogo = partido.logoRival || EQUIPOS_RIVALES.find(e => e.nombre === partido.rival)?.logo || '';
+        const logoLocal = partido.esLocal ? INFO_EQUIPO.LOGO : `logos/${rivalLogo}`;
+        const logoVisitante = partido.esLocal ? `logos/${rivalLogo}` : INFO_EQUIPO.LOGO;
         const tieneActa = actas.some(a => a.partidoId === partido.id);
 
         return `
@@ -1548,19 +1742,28 @@ export class UIManager {
     generarVistaActa(acta) {
         const equipoLocal = acta.esLocal ? INFO_EQUIPO.NOMBRE : acta.rival;
         const equipoVisitante = acta.esLocal ? acta.rival : INFO_EQUIPO.NOMBRE;
-        const logoLocal = acta.esLocal ? INFO_EQUIPO.LOGO : `logos/${acta.logoRival}`;
-        const logoVisitante = acta.esLocal ? `logos/${acta.logoRival}` : INFO_EQUIPO.LOGO;
+        const rivalLogoActa = acta.logoRival || EQUIPOS_RIVALES.find(e => e.nombre === acta.rival)?.logo || '';
+        const logoLocal = acta.esLocal ? INFO_EQUIPO.LOGO : `logos/${rivalLogoActa}`;
+        const logoVisitante = acta.esLocal ? `logos/${rivalLogoActa}` : INFO_EQUIPO.LOGO;
 
         return `
             <div class="min-h-screen bg-gradient-to-br from-orange-50 to-white">
                 <div class="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-6 shadow-lg">
                     <div class="max-w-4xl mx-auto">
-                        <button
-                            onclick="window.cerrarActaGlobal()"
-                            class="bg-white text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-50 mb-4"
-                        >
-                            ← Volver
-                        </button>
+                        <div class="flex items-center gap-3 mb-4">
+                            <button
+                                onclick="window.cerrarActaGlobal()"
+                                class="bg-white text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-50 no-print"
+                            >
+                                ← Volver
+                            </button>
+                            <button
+                                onclick="window.print()"
+                                class="bg-orange-100 text-orange-700 px-4 py-2 rounded-lg font-semibold hover:bg-orange-200 no-print"
+                            >
+                                🖨️ Imprimir / PDF
+                            </button>
+                        </div>
                         <h1 class="text-3xl font-bold">📊 ACTA OFICIAL</h1>
                         <p class="text-orange-100">Jornada ${acta.jornada} • Temporada ${INFO_EQUIPO.TEMPORADA}</p>
                     </div>
@@ -1863,6 +2066,8 @@ export class UIManager {
                             <select id="fase" required class="w-full border rounded px-3 py-2">
                                 <option value="primera">🟡 Primera Fase</option>
                                 <option value="segunda">🔵 Segunda Fase</option>
+                                <option value="amistosos">🤝 Amistosos</option>
+                                <option value="copa_valenciana">🏆 Copa Valenciana</option>
                             </select>
                         </div>
                         <div class="md:col-span-2">
@@ -2387,6 +2592,15 @@ export class UIManager {
                 >
                     🔵 2ª Fase
                 </button>
+                <button
+                    onclick="window.cambiarFaseClasificacion('copa_valenciana')"
+                    class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg text-sm md:text-base font-semibold transition-colors ${filtroFase === 'copa_valenciana'
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }"
+                >
+                    🏆 Copa Valenciana
+                </button>
             </div>
 
             <!-- Contenido de clasificación -->
@@ -2419,7 +2633,14 @@ export class UIManager {
         this.cargarClasificacionFirebase(fase);
 
         // Usar datos de constants.js como fallback mientras carga Firebase
-        const clasificacion = fase === 'segunda' ? CLASIFICACION_SEGUNDA_FASE : CLASIFICACION_PRIMERA_FASE;
+        let clasificacion;
+        if (fase === 'segunda') {
+            clasificacion = CLASIFICACION_SEGUNDA_FASE;
+        } else if (fase === 'copa_valenciana') {
+            clasificacion = CLASIFICACION_COPA_VALENCIANA;
+        } else {
+            clasificacion = CLASIFICACION_PRIMERA_FASE;
+        }
 
         return `
             <div class="bg-white rounded-lg shadow-md overflow-x-auto">
@@ -2633,7 +2854,7 @@ export class UIManager {
                             <h3 class="text-2xl font-bold text-gray-800 mb-4">📊 Clasificación Vacía</h3>
 
                             <p class="text-gray-600 mb-8">
-                                No hay equipos en la base de datos para ${fase === 'primera' ? 'la primera fase' : 'la segunda fase'}.
+                                No hay equipos en la base de datos para ${this.getNombreFase(fase)}.
                             </p>
 
                             ${fase === 'primera' ? `
@@ -2691,7 +2912,7 @@ export class UIManager {
                         <div class="bg-white rounded-lg shadow-md p-8 text-center">
                             <h3 class="text-xl font-bold text-gray-800 mb-4">📊 Clasificación No Disponible</h3>
                             <p class="text-gray-600">
-                                La clasificación de ${fase === 'primera' ? 'la primera fase' : 'la segunda fase'} aún no ha sido publicada.
+                                La clasificación de ${this.getNombreFase(fase)} aún no ha sido publicada.
                             </p>
                             <p class="text-sm text-gray-500 mt-4">
                                 Vuelve pronto para ver los resultados
@@ -2702,6 +2923,21 @@ export class UIManager {
             }
         } catch (error) {
             console.error('❌ Error cargando clasificación desde Firebase:', error);
+        }
+    }
+
+    /**
+     * Obtiene el nombre legible de una fase
+     * @param {string} fase - Código de la fase
+     * @returns {string} Nombre legible
+     */
+    getNombreFase(fase) {
+        switch (fase) {
+            case 'primera': return '1ª Fase';
+            case 'segunda': return '2ª Fase';
+            case 'amistosos': return 'Amistosos';
+            case 'copa_valenciana': return 'Copa Valenciana';
+            default: return fase;
         }
     }
 }
