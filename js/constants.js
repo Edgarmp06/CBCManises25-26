@@ -216,7 +216,7 @@ export const INFO_EQUIPO = {
     NOMBRE: 'CBC Manises-Quart',
     CATEGORIA: 'Cadete Masculino',
     TEMPORADA: '2025/26',
-    COMPETICION: 'Amistosos / Copa Valenciana',
+    COMPETICION: 'TF26 Junior Masculino Segunda',
     LOGO: 'logos/cbc-manises.jpg',
     PABELLON_LOCAL: 'Pabellón Alberto Arnal (Manises)'
 };

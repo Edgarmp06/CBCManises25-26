@@ -27,6 +27,11 @@ export const EQUIPOS_RIVALES = [
     { nombre: 'Academia Petraher B', logo: 'petraher.jpg' },
     { nombre: 'S.D. El Pilar Valencia A', logo: 'el-pilar.jpg' },
 
+    // SEGUNDA FASE (TF26 Junior Masculino Segunda)
+    { nombre: 'Barnices Mora CB Chiva', logo: 'chiva.jpg' },
+    { nombre: 'Picanya Bàsquet FuturPiso 09', logo: 'picanya.jpg' },
+    { nombre: 'Tapas del Sur Jovens L\'Eliana', logo: 'eliana.jpg' },
+
     // AMISTOSOS
     { nombre: 'Godella Infantil', logo: 'godella.jpg' },
     { nombre: 'Valencia Basket Infantil', logo: 'valencia-basket.jpg' },
@@ -57,7 +62,11 @@ export const UBICACIONES = [
     { nombre: 'Pabellón Badia Pedretera (Moncada)', esLocal: false },
     { nombre: 'Pabellón Benimaclet (Valencia)', esLocal: false },
 
-    // UBICACIONES DE SEGUNDA FASE
+    // UBICACIONES DE SEGUNDA FASE (TF26 Junior Masculino Segunda)
+    { nombre: 'Centro Deportivo Municipal (Chiva)', esLocal: false },
+    { nombre: 'Pabellón Municipal L\'Eliana', esLocal: false },
+
+    // UBICACIONES DE SEGUNDA FASE (anterior)
     { nombre: 'PAB MUNI TABERNES BLANQUES', esLocal: false },
     { nombre: 'IES Cid Campeador (Valencia)', esLocal: false },
     { nombre: 'COL ESCOLAPIAS (Valencia)', esLocal: false },

@@ -1519,13 +1519,19 @@ export class UIManager {
                     </div>
                 ` : ''}
 
-                ${partido.fase ? `
-                    <div class="text-center mb-2">
-                        <span class="text-xs font-semibold px-2 py-1 rounded ${partido.fase === 'primera' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
-                            ${partido.fase === 'primera' ? '🟡 1ª Fase' : '🔵 2ª Fase'}
-                        </span>
-                    </div>
-                ` : ''}
+                ${partido.fase ? (() => {
+                    const faseMap = {
+                        primera:        { cls: 'bg-yellow-100 text-yellow-800', label: '🟡 1ª Fase' },
+                        segunda:        { cls: 'bg-blue-100 text-blue-800',     label: '🔵 2ª Fase' },
+                        amistosos:      { cls: 'bg-gray-100 text-gray-700',     label: '🤝 Amistoso' },
+                        copa_valenciana:{ cls: 'bg-purple-100 text-purple-800', label: '🏆 Copa Valenciana' },
+                        copa:           { cls: 'bg-purple-100 text-purple-800', label: '🏆 Copa' },
+                    };
+                    const f = faseMap[partido.fase] || { cls: 'bg-gray-100 text-gray-600', label: partido.fase };
+                    return `<div class="text-center mb-2">
+                        <span class="text-xs font-semibold px-2 py-1 rounded ${f.cls}">${f.label}</span>
+                    </div>`;
+                })() : ''}
 
                 ${partido.cuartoActual && !partido.finalizado ? `
                     <div class="text-center mb-3">
