@@ -214,9 +214,13 @@ export const URLS = {
 // === INFORMACIÓN DEL EQUIPO ===
 export const INFO_EQUIPO = {
     NOMBRE: 'CBC Manises-Quart',
-    CATEGORIA: 'Cadete Masculino',
+    CATEGORIA: 'Cadete Masculino A',
     TEMPORADA: '2025/26',
-    COMPETICION: 'TF26 Junior Masculino Segunda',
+    COMPETICION: [
+        'Cadete Masculino IR Nivel Preferente Grupo D',
+        'Cadete Masculino IR Campeonato 1ª Zonal Grupo D',
+        'TF26 Junior Masculino Segunda'
+    ],
     LOGO: 'logos/cbc-manises.jpg',
     PABELLON_LOCAL: 'Pabellón Alberto Arnal (Manises)'
 };

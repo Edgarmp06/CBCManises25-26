@@ -940,7 +940,9 @@ export class UIManager {
                 <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div class="flex-1">
                         <h2 class="text-2xl md:text-3xl font-bold">🏀 ${INFO_EQUIPO.NOMBRE}</h2>
-                        <p class="text-sm md:text-base text-orange-100">${INFO_EQUIPO.CATEGORIA} - ${INFO_EQUIPO.COMPETICION}</p>
+                        <p class="text-sm md:text-base text-orange-100 font-semibold">${INFO_EQUIPO.CATEGORIA}</p>
+                        ${(Array.isArray(INFO_EQUIPO.COMPETICION) ? INFO_EQUIPO.COMPETICION : [INFO_EQUIPO.COMPETICION]).map(c => `
+                        <p class="text-xs text-orange-200">${c}</p>`).join('')}
                         <p class="text-xs md:text-sm text-orange-200">Temporada ${INFO_EQUIPO.TEMPORADA} • 🔴 EN VIVO</p>
                     </div>
                     <div class="flex gap-2 items-center flex-shrink-0">
