@@ -149,6 +149,21 @@
         CBC Manises-Quart - Cadete Masculino Temporada 2025/26 - Amistosos / Copa Valenciana - Calendario, Resultados y Partidos en Directo
     </h1>
 
+    <!-- Banner web cerrada (visible desde 01/07/2026) -->
+    <div id="banner-cerrada" style="display:none; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; text-align: center; padding: 1rem 1.5rem; position: relative; z-index: 100;">
+        <p style="font-size: 1.1rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.25rem;">
+            🔒 WEB CERRADA
+        </p>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin: 0;">
+            Este sitio queda como archivo histórico de la temporada 2025/26 · Cadete Masculino A · CBC Manises-Quart
+        </p>
+    </div>
+    <script>
+        if (new Date() >= new Date('2026-07-01')) {
+            document.getElementById('banner-cerrada').style.display = 'block';
+        }
+    </script>
+
     <!-- Contenedor principal de la aplicación -->
     <div id="app" class="contenido-web" role="main"></div>
 
