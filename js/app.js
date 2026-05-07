@@ -922,6 +922,13 @@ window.logout = () => {
 window.verActaGlobal = (partidoId) => window.app.verActa(partidoId);
 window.cerrarActaGlobal = () => window.app.cerrarActa();
 
+window.guardarActaGlobal = async (data) => {
+    const partido = app.partidosManager.getPartidoById(data.partidoId);
+    const id = await app.actasManager.crearActa(data, partido);
+    mostrarNotificacion('Acta guardada correctamente', 'success');
+    return id;
+};
+
 // === FUNCIONES DE GESTIÓN DE ACTAS (PANEL ADMIN) ===
 window.eliminarActaGlobal = async (id) => {
     try {
