@@ -7,7 +7,7 @@
 
 import { formatearFecha, formatearFechaCorta, mostrarNotificacion, compartirResultado } from './utils.js';
 import { INFO_EQUIPO, URLS, JUGADORES_EQUIPO, CLASIFICACION_PRIMERA_FASE, CLASIFICACION_SEGUNDA_FASE, CLASIFICACION_COPA_VALENCIANA } from './constants.js';
-import { UBICACIONES, EQUIPOS_RIVALES } from './config.js';
+import { UBICACIONES, EQUIPOS_RIVALES, EQUIPOS_COPA_VALENCIANA } from './config.js';
 
 /**
  * Clase principal para gestionar la interfaz de usuario
@@ -777,12 +777,19 @@ export class UIManager {
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <div>
                                 <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Rival</label>
-                                <select id="editar-rival" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
-                                    <option value="">Seleccionar equipo...</option>
-                                    ${EQUIPOS_RIVALES.map(equipo =>
-            `<option value="${equipo.nombre}">${equipo.nombre}</option>`
+                                <input
+                                    type="text"
+                                    id="editar-rival"
+                                    list="editar-rival-list"
+                                    required
+                                    placeholder="Escribe o selecciona equipo..."
+                                    style="width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;"
+                                >
+                                <datalist id="editar-rival-list">
+                                    ${[...EQUIPOS_RIVALES, ...EQUIPOS_COPA_VALENCIANA].map(equipo =>
+            `<option value="${equipo.nombre}">`
         ).join('')}
-                                </select>
+                                </datalist>
                             </div>
                             <div>
                                 <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">Jornada</label>
@@ -2058,12 +2065,19 @@ export class UIManager {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Rival</label>
-                            <select id="rival" required class="w-full border rounded px-3 py-2">
-                                <option value="">Seleccionar equipo...</option>
-                                ${EQUIPOS_RIVALES.map(equipo =>
-            `<option value="${equipo.nombre}">${equipo.nombre}</option>`
+                            <input
+                                type="text"
+                                id="rival"
+                                list="rival-list"
+                                required
+                                placeholder="Escribe o selecciona equipo..."
+                                class="w-full border rounded px-3 py-2"
+                            >
+                            <datalist id="rival-list">
+                                ${[...EQUIPOS_RIVALES, ...EQUIPOS_COPA_VALENCIANA].map(equipo =>
+            `<option value="${equipo.nombre}">`
         ).join('')}
-                            </select>
+                            </datalist>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jornada</label>
