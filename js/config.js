@@ -35,7 +35,8 @@ export const EQUIPOS_RIVALES = [
     // AMISTOSOS
     { nombre: 'Godella Infantil', logo: 'godella.jpg' },
     { nombre: 'Valencia Basket Infantil', logo: 'valencia-basket.jpg' },
-    { nombre: 'Valencia Basket Azul', logo: 'valencia-basket.jpg' }
+    { nombre: 'Valencia Basket Azul', logo: 'valencia-basket.jpg' },
+    { nombre: 'Burjassot C.B.', logo: 'burja.png' }
 ];
 
 // Equipos de Copa Valenciana (si es necesario separarlos)

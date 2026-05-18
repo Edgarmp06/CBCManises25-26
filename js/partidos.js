@@ -9,7 +9,7 @@
  */
 
 import { collection, addDoc, deleteDoc, doc, updateDoc, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { UBICACIONES, EQUIPOS_RIVALES } from './config.js';
+import { UBICACIONES, EQUIPOS_RIVALES, EQUIPOS_COPA_VALENCIANA } from './config.js';
 
 export class PartidosManager {
     /**
@@ -134,7 +134,10 @@ export class PartidosManager {
      * @returns {string} Nombre del archivo del logo
      */
     obtenerLogoRival(nombreRival) {
-        const equipo = EQUIPOS_RIVALES.find(e => e.nombre === nombreRival);
+        let equipo = EQUIPOS_RIVALES.find(e => e.nombre === nombreRival);
+        if (!equipo) {
+            equipo = EQUIPOS_COPA_VALENCIANA.find(e => e.nombre === nombreRival);
+        }
         return equipo ? equipo.logo : '';
     }
 

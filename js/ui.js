@@ -1513,7 +1513,12 @@ export class UIManager {
     generarPartidoCard(partido, actas, isAdmin) {
         const equipoLocal = partido.esLocal ? INFO_EQUIPO.NOMBRE : partido.rival;
         const equipoVisitante = partido.esLocal ? partido.rival : INFO_EQUIPO.NOMBRE;
-        const rivalLogo = partido.logoRival || EQUIPOS_RIVALES.find(e => e.nombre === partido.rival)?.logo || '';
+        let rivalLogo = partido.logoRival || '';
+        if (!rivalLogo) {
+            const equipoEnRivales = EQUIPOS_RIVALES.find(e => e.nombre === partido.rival);
+            const equipoEnCopa = EQUIPOS_COPA_VALENCIANA.find(e => e.nombre === partido.rival);
+            rivalLogo = (equipoEnRivales || equipoEnCopa)?.logo || '';
+        }
         const logoLocal = partido.esLocal ? INFO_EQUIPO.LOGO : `logos/${rivalLogo}`;
         const logoVisitante = partido.esLocal ? `logos/${rivalLogo}` : INFO_EQUIPO.LOGO;
         const tieneActa = actas.some(a => a.partidoId === partido.id);
@@ -1757,7 +1762,12 @@ export class UIManager {
     generarVistaActa(acta) {
         const equipoLocal = acta.esLocal ? INFO_EQUIPO.NOMBRE : acta.rival;
         const equipoVisitante = acta.esLocal ? acta.rival : INFO_EQUIPO.NOMBRE;
-        const rivalLogoActa = acta.logoRival || EQUIPOS_RIVALES.find(e => e.nombre === acta.rival)?.logo || '';
+        let rivalLogoActa = acta.logoRival || '';
+        if (!rivalLogoActa) {
+            const equipoEnRivales = EQUIPOS_RIVALES.find(e => e.nombre === acta.rival);
+            const equipoEnCopa = EQUIPOS_COPA_VALENCIANA.find(e => e.nombre === acta.rival);
+            rivalLogoActa = (equipoEnRivales || equipoEnCopa)?.logo || '';
+        }
         const logoLocal = acta.esLocal ? INFO_EQUIPO.LOGO : `logos/${rivalLogoActa}`;
         const logoVisitante = acta.esLocal ? `logos/${rivalLogoActa}` : INFO_EQUIPO.LOGO;
 
