@@ -68,6 +68,8 @@ export const UBICACIONES = [
     // UBICACIONES DE SEGUNDA FASE (TF26 Junior Masculino Segunda)
     { nombre: 'Centro Deportivo Municipal (Chiva)', esLocal: false },
     { nombre: 'Pabellón Municipal L\'Eliana', esLocal: false },
+    { nombre: 'Pabellón Municipal Picanya', esLocal: false },
+    { nombre: 'POLI MUNI SEDAVI', esLocal: false },
 
     // UBICACIONES DE SEGUNDA FASE (anterior)
     { nombre: 'PAB MUNI TABERNES BLANQUES', esLocal: false },
