@@ -31,12 +31,14 @@ export const EQUIPOS_RIVALES = [
     { nombre: 'Barnices Mora CB Chiva', logo: 'chiva.jpg' },
     { nombre: 'Picanya Bàsquet FuturPiso 09', logo: 'picanya.jpg' },
     { nombre: 'Tapas del Sur Jovens L\'Eliana', logo: 'eliana.jpg' },
+    {nombre: 'Sedavi Basquet', logo: 'sedavi.png' },
 
     // AMISTOSOS
     { nombre: 'Godella Infantil', logo: 'godella.jpg' },
     { nombre: 'Valencia Basket Infantil', logo: 'valencia-basket.jpg' },
     { nombre: 'Valencia Basket Azul', logo: 'valencia-basket.jpg' },
     { nombre: 'Burjassot C.B.', logo: 'burja.png' }
+
 ];
 
 // Equipos de Copa Valenciana (si es necesario separarlos)
